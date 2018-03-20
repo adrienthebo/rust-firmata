@@ -1,0 +1,6 @@
+[package]
+name = "firmata"
+version = "0.1.0"
+authors = ["Adrien Thebo <athebo@polysync.io>"]
+
+[dependencies]
