@@ -20,18 +20,27 @@ pub enum SysexMsg<'a> {
 
 
 named!(query_firmware<&[u8], SysexMsg>,
-       do_parse!(
-           tag!(&[QUERY_FIRMWARE])            >>
-           major: opt!(take!(1))              >>
-           minor: opt!(take!(1))              >>
-           name: opt!(take_while!(is_ascii)) >>
-           (SysexMsg::QueryFirmware {
-               major: major.map(|b| &b[0]),
-               minor: minor.map(|b| &b[0]),
-               firmware_name: name
-           })
+       alt_complete!(
+           do_parse!(
+               tag!(&[QUERY_FIRMWARE])            >>
+               major: opt!(take!(1))              >>
+               minor: opt!(take!(1))              >>
+               name: opt!(take_while!(is_ascii)) >>
+               (SysexMsg::QueryFirmware {
+                   major: major.map(|b| &b[0]),
+                   minor: minor.map(|b| &b[0]),
+                   firmware_name: name
+               })
            )
-      );
+           | map!(tag!(&[QUERY_FIRMWARE]), |_| {
+               SysexMsg::QueryFirmware {
+                   major: None,
+                   minor: None,
+                   firmware_name: None,
+               }}
+           )
+       )
+);
 
 
 named!(sysex<&[u8], SysexMsg>,
@@ -40,7 +49,7 @@ named!(sysex<&[u8], SysexMsg>,
            query_firmware,
            tag!(&[END_SYSEX])
        )
-    );
+);
 
 
 #[cfg(test)]
@@ -68,7 +77,7 @@ mod tests {
 
     #[test]
     fn parses_sysex_query_firmware_resp() {
-        let msg = b"\xF0\x79\x02\x04\xF7";
+        let msg = b"\xF0\x79\x02\x04StandardFirmata.ino\xF7";
 
         assert_eq!(
             sysex(&msg[..]),
@@ -77,7 +86,7 @@ mod tests {
                 SysexMsg::QueryFirmware {
                     major: Some(&2),
                     minor: Some(&4),
-                    firmware_name: Some(&b""[..]),
+                    firmware_name: Some(&b"StandardFirmata.ino"[..]),
                 }
             )
         );
