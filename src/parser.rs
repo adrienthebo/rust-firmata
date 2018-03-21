@@ -149,6 +149,7 @@ mod tests {
         );
     }
 
+    #[test]
     fn parses_pin_capability_entry() {
         let msg = b"\x00\x01\x7F";
 
