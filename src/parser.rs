@@ -7,11 +7,26 @@ pub const QUERY_FIRMWARE: u8 = 0x79;
 
 pub const CAPABILITY_QUERY: u8 = 0x6B;
 pub const CAPABILITY_RESPONSE: u8 = 0x6c;
+pub const CAPABILITY_RESPONSE_SEP: u8 = 0x7F;
 
 use nom::IResult;
 
 
-fn is_ascii(chr: u8) -> bool { chr.is_ascii() }
+#[derive(Debug,PartialEq)]
+pub enum PinMode {
+    DigitalInput,
+    DigitalOutput,
+    AnalogInput,
+    PWM,
+    Other(u8)
+}
+
+#[derive(Debug,PartialEq)]
+pub struct PinCapability {
+    mode: PinMode,
+    res: u8
+}
+
 
 #[derive(Debug,PartialEq)]
 pub enum SysexMsg<'a> {
@@ -24,8 +39,30 @@ pub enum SysexMsg<'a> {
 }
 
 
+fn is_ascii(chr: u8) -> bool { chr.is_ascii() }
+
+
 named!(capability_query<&[u8], SysexMsg>,
        map!(tag!(&[CAPABILITY_QUERY]), |_| SysexMsg::CapabilityQuery));
+
+
+named!(capability_response_entry<&[u8], PinCapability>,
+       do_parse!(
+           mode: take!(1)                   >>
+           res: take!(1)                    >>
+           tag!(&[CAPABILITY_RESPONSE_SEP]) >>
+           (PinCapability {
+               res: res[0],
+               mode: match mode[0] {
+                   0x00 => PinMode::DigitalInput,
+                   0x01 => PinMode::DigitalOutput,
+                   0x02 => PinMode::AnalogInput,
+                   0x03 => PinMode::PWM,
+                   n @ _ => PinMode::Other(n)
+               }
+           })
+        )
+);
 
 
 
@@ -112,6 +149,21 @@ mod tests {
         assert_eq!(
             sysex(&msg[..]),
             IResult::Done(EMPTY, SysexMsg::CapabilityQuery)
+        );
+    }
+
+    fn parses_pin_capability_entry() {
+        let msg = b"\x00\x01\x7F";
+
+        assert_eq!(
+            capability_response_entry(&msg[..]),
+            IResult::Done(
+                EMPTY,
+                PinCapability {
+                    mode: PinMode::DigitalInput,
+                    res: 1
+                }
+            )
         );
     }
 }
