@@ -9,24 +9,39 @@ use nom::IResult;
 
 fn is_ascii(chr: u8) -> bool { chr.is_ascii() }
 
+#[derive(Debug,PartialEq)]
+pub enum SysexMsg<'a> {
+    QueryFirmware {
+        major: Option<&'a u8>,
+        minor: Option<&'a u8>,
+        firmware_name: Option<&'a [u8]>
+    }
+}
 
-named!(query_firmware<&[u8], (&[u8], &[u8])>,
-       tuple!(
-           tag!(&[QUERY_FIRMWARE]),
-           take_while!(is_ascii)
+
+named!(query_firmware<&[u8], SysexMsg>,
+       do_parse!(
+           tag!(&[QUERY_FIRMWARE])            >>
+           major: opt!(take!(1))              >>
+           minor: opt!(take!(1))              >>
+           name: opt!(take_while!(is_ascii)) >>
+           (SysexMsg::QueryFirmware {
+               major: major.map(|b| &b[0]),
+               minor: minor.map(|b| &b[0]),
+               firmware_name: name
+           })
            )
       );
 
 
-named!(sysex<&[u8], (&[u8], &[u8])>,
+named!(sysex<&[u8], SysexMsg>,
        delimited!(
            tag!(&[START_SYSEX]),
-           alt!(
-               query_firmware
-           ),
+           query_firmware,
            tag!(&[END_SYSEX])
        )
     );
+
 
 #[cfg(test)]
 mod tests {
@@ -42,10 +57,11 @@ mod tests {
             sysex(&msg[..]),
             IResult::Done(
                 EMPTY,
-                (
-                    &[QUERY_FIRMWARE][..],
-                    &[][..]
-                )
+                SysexMsg::QueryFirmware {
+                    major: None,
+                    minor: None,
+                    firmware_name: None,
+                }
             )
         );
     }
@@ -58,10 +74,11 @@ mod tests {
             sysex(&msg[..]),
             IResult::Done(
                 EMPTY,
-                (
-                    &[QUERY_FIRMWARE][..],
-                    &[2, 4][..]
-                )
+                SysexMsg::QueryFirmware {
+                    major: Some(&2),
+                    minor: Some(&4),
+                    firmware_name: Some(&b""[..]),
+                }
             )
         );
     }
