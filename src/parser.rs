@@ -39,9 +39,6 @@ pub enum SysexMsg<'a> {
 }
 
 
-fn is_ascii(chr: u8) -> bool { chr.is_ascii() }
-
-
 named!(capability_query<&[u8], SysexMsg>,
        map!(tag!(&[CAPABILITY_QUERY]), |_| SysexMsg::CapabilityQuery));
 
@@ -69,10 +66,10 @@ named!(capability_response_entry<&[u8], PinCapability>,
 named!(query_firmware<&[u8], SysexMsg>,
        alt_complete!(
            do_parse!(
-               tag!(&[QUERY_FIRMWARE])            >>
-               major: opt!(take!(1))              >>
-               minor: opt!(take!(1))              >>
-               name: opt!(take_while!(is_ascii)) >>
+               tag!(&[QUERY_FIRMWARE])                           >>
+               major: opt!(take!(1))                             >>
+               minor: opt!(take!(1))                             >>
+               name: opt!(take_while!(|chr: u8| chr.is_ascii())) >>
                (SysexMsg::QueryFirmware {
                    major: major.map(|b| &b[0]),
                    minor: minor.map(|b| &b[0]),
