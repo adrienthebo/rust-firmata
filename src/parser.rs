@@ -26,9 +26,9 @@ pub struct PinCapability {
 #[derive(Debug,PartialEq)]
 pub enum SysexMsg {
     QueryFirmware {
-        major: Option<u8>,
-        minor: Option<u8>,
-        firmware_name: Option<Vec<u8>>
+        major: u8,
+        minor: u8,
+        firmware_name: Vec<u8>
     },
     CapabilityQuery,
     CapabilityResponse(Vec<Vec<PinCapability>>),
@@ -85,25 +85,16 @@ named!(capability_response<&[u8], SysexMsg>,
 
 
 named!(query_firmware<&[u8], SysexMsg>,
-       alt_complete!(
-           do_parse!(
-               tag!(&[QUERY_FIRMWARE])                           >>
-               major: opt!(take!(1))                             >>
-               minor: opt!(take!(1))                             >>
-               name: opt!(take_while!(|chr: u8| chr.is_ascii())) >>
-               (SysexMsg::QueryFirmware {
-                   major: major.map(|b| b[0]),
-                   minor: minor.map(|b| b[0]),
-                   firmware_name: name.map(|s| s.to_vec())
-               })
-           )
-           | map!(tag!(&[QUERY_FIRMWARE]), |_| {
-               SysexMsg::QueryFirmware {
-                   major: None,
-                   minor: None,
-                   firmware_name: None,
-               }}
-           )
+       do_parse!(
+           tag!(&[QUERY_FIRMWARE])                     >>
+           major: take!(1)                             >>
+           minor: take!(1)                             >>
+           name: take_while!(|chr: u8| chr.is_ascii()) >>
+           (SysexMsg::QueryFirmware {
+               major: major[0],
+               minor: minor[0],
+               firmware_name: name.to_vec()
+           })
        )
 );
 
@@ -122,7 +113,7 @@ named!(sysex<&[u8], SysexMsg>,
 
 
 named!(pub parse<&[u8], FirmataMsg>,
-       alt_complete!(
+       alt!(
            map!(sysex, |msg| FirmataMsg::Sysex(msg))
         )
 );
@@ -134,23 +125,6 @@ mod tests {
     const EMPTY: &'static [u8] = b"";
 
     #[test]
-    fn parses_sysex_query_firmware_cmd() {
-        let msg = b"\xF0\x79\xF7";
-
-        assert_eq!(
-            sysex(&msg[..]),
-            Ok((
-                EMPTY,
-                SysexMsg::QueryFirmware {
-                    major: None,
-                    minor: None,
-                    firmware_name: None,
-                }
-            ))
-        );
-    }
-
-    #[test]
     fn parses_sysex_query_firmware_resp() {
         let msg = b"\xF0\x79\x02\x04StandardFirmata.ino\xF7";
 
@@ -159,9 +133,9 @@ mod tests {
             Ok((
                 EMPTY,
                 SysexMsg::QueryFirmware {
-                    major: Some(2),
-                    minor: Some(4),
-                    firmware_name: Some(b"StandardFirmata.ino".to_vec()),
+                    major: 2,
+                    minor: 4,
+                    firmware_name: b"StandardFirmata.ino".to_vec(),
                 }
             ))
         );

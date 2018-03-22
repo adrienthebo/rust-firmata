@@ -4,6 +4,14 @@ version = "0.1.0"
 authors = ["Adrien Thebo <athebo@polysync.io>"]
 
 [dependencies]
-nom = "4.0.0-beta2"
-serial = "0.4.0"
+log = "0.4.0"
+serial-core = "0.4"
 error-chain = "0.11.0"
+
+[dev-dependencies]
+serial = "0.4.0"
+env_logger = "0.5.6"
+
+[dependencies.nom]
+version = "4.0.0-beta2"
+features = ["verbose-errors"]
