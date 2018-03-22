@@ -9,9 +9,6 @@ pub const CAPABILITY_QUERY: u8 = 0x6B;
 pub const CAPABILITY_RESPONSE: u8 = 0x6c;
 pub const CAPABILITY_RESPONSE_SEP: u8 = 0x7F;
 
-use nom::IResult;
-
-
 #[derive(Debug,PartialEq)]
 pub enum PinMode {
     DigitalInput,
@@ -36,6 +33,7 @@ pub enum SysexMsg<'a> {
         firmware_name: Option<&'a [u8]>
     },
     CapabilityQuery,
+    CapabilityResponse(Vec<Vec<PinCapability>>),
 }
 
 
@@ -47,7 +45,6 @@ named!(capability_response_entry<&[u8], PinCapability>,
        do_parse!(
            mode: take!(1)                   >>
            res: take!(1)                    >>
-           tag!(&[CAPABILITY_RESPONSE_SEP]) >>
            (PinCapability {
                res: res[0],
                mode: match mode[0] {
@@ -58,6 +55,16 @@ named!(capability_response_entry<&[u8], PinCapability>,
                    n @ _ => PinMode::Other(n)
                }
            })
+        )
+);
+
+
+named!(capability_response_list<&[u8], Vec<PinCapability>>,
+       do_parse!(
+           pair: many_till!(
+               call!(capability_response_entry),
+               tag!(&[CAPABILITY_RESPONSE_SEP])
+           ) >> (pair.0)
         )
 );
 
@@ -111,14 +118,14 @@ mod tests {
 
         assert_eq!(
             sysex(&msg[..]),
-            IResult::Done(
+            Ok((
                 EMPTY,
                 SysexMsg::QueryFirmware {
                     major: None,
                     minor: None,
                     firmware_name: None,
                 }
-            )
+            ))
         );
     }
 
@@ -128,14 +135,14 @@ mod tests {
 
         assert_eq!(
             sysex(&msg[..]),
-            IResult::Done(
+            Ok((
                 EMPTY,
                 SysexMsg::QueryFirmware {
                     major: Some(&2),
                     minor: Some(&4),
                     firmware_name: Some(&b"StandardFirmata.ino"[..]),
                 }
-            )
+            ))
         );
     }
 
@@ -145,23 +152,83 @@ mod tests {
 
         assert_eq!(
             sysex(&msg[..]),
-            IResult::Done(EMPTY, SysexMsg::CapabilityQuery)
+            Ok((EMPTY, SysexMsg::CapabilityQuery))
         );
     }
 
     #[test]
     fn parses_pin_capability_entry() {
-        let msg = b"\x00\x01\x7F";
+        let msg = b"\x00\x01";
 
         assert_eq!(
             capability_response_entry(&msg[..]),
-            IResult::Done(
+            Ok((
                 EMPTY,
                 PinCapability {
                     mode: PinMode::DigitalInput,
                     res: 1
                 }
-            )
+            ))
+        );
+    }
+
+
+    #[test]
+    fn parses_pin_capability_list_0() {
+        let msg = [CAPABILITY_RESPONSE_SEP];
+
+        assert_eq!(
+            capability_response_list(&msg[..]),
+            Ok((
+                EMPTY,
+                Vec::new()
+            ))
+        );
+    }
+
+    #[test]
+    fn parses_pin_capability_list_1() {
+        let msg = [
+            0x00, 0x01,
+            CAPABILITY_RESPONSE_SEP
+        ];
+
+        let pin_capabilities = vec![
+            PinCapability { mode: PinMode::DigitalInput, res: 1 },
+        ];
+
+        assert_eq!(
+            capability_response_list(&msg[..]),
+            Ok((
+                EMPTY,
+                pin_capabilities
+            ))
+        );
+    }
+
+    #[test]
+    fn parses_pin_capability_list_4() {
+        let msg = [
+            0x00, 0x01,
+            0x01, 0x01,
+            0x02, 0x0A,
+            0x03, 0x08,
+            CAPABILITY_RESPONSE_SEP
+        ];
+
+        let pin_capabilities = vec![
+            PinCapability { mode: PinMode::DigitalInput, res: 1 },
+            PinCapability { mode: PinMode::DigitalOutput, res: 1 },
+            PinCapability { mode: PinMode::AnalogInput, res: 10 },
+            PinCapability { mode: PinMode::PWM, res: 8 },
+        ];
+
+        assert_eq!(
+            capability_response_list(&msg[..]),
+            Ok((
+                EMPTY,
+                pin_capabilities
+            ))
         );
     }
 }
