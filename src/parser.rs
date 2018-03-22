@@ -24,11 +24,11 @@ pub struct PinCapability {
 
 
 #[derive(Debug,PartialEq)]
-pub enum SysexMsg<'a> {
+pub enum SysexMsg {
     QueryFirmware {
-        major: Option<&'a u8>,
-        minor: Option<&'a u8>,
-        firmware_name: Option<&'a [u8]>
+        major: Option<u8>,
+        minor: Option<u8>,
+        firmware_name: Option<Vec<u8>>
     },
     CapabilityQuery,
     CapabilityResponse(Vec<Vec<PinCapability>>),
@@ -36,8 +36,8 @@ pub enum SysexMsg<'a> {
 
 
 #[derive(Debug,PartialEq)]
-pub enum FirmataMsg<'a> {
-    Sysex(SysexMsg<'a>)
+pub enum FirmataMsg {
+    Sysex(SysexMsg)
 }
 
 
@@ -92,9 +92,9 @@ named!(query_firmware<&[u8], SysexMsg>,
                minor: opt!(take!(1))                             >>
                name: opt!(take_while!(|chr: u8| chr.is_ascii())) >>
                (SysexMsg::QueryFirmware {
-                   major: major.map(|b| &b[0]),
-                   minor: minor.map(|b| &b[0]),
-                   firmware_name: name
+                   major: major.map(|b| b[0]),
+                   minor: minor.map(|b| b[0]),
+                   firmware_name: name.map(|s| s.to_vec())
                })
            )
            | map!(tag!(&[QUERY_FIRMWARE]), |_| {
@@ -153,9 +153,9 @@ mod tests {
             Ok((
                 EMPTY,
                 SysexMsg::QueryFirmware {
-                    major: Some(&2),
-                    minor: Some(&4),
-                    firmware_name: Some(&b"StandardFirmata.ino"[..]),
+                    major: Some(2),
+                    minor: Some(4),
+                    firmware_name: Some(b"StandardFirmata.ino".to_vec()),
                 }
             ))
         );
