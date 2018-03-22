@@ -6,3 +6,4 @@ authors = ["Adrien Thebo <athebo@polysync.io>"]
 [dependencies]
 nom = "4.0.0-beta2"
 serial = "0.4.0"
+error-chain = "0.11.0"
