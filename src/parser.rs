@@ -121,6 +121,12 @@ named!(sysex<&[u8], SysexMsg>,
 );
 
 
+named!(pub parse<&[u8], FirmataMsg>,
+       alt_complete!(
+           map!(sysex, |msg| FirmataMsg::Sysex(msg))
+        )
+);
+
 #[cfg(test)]
 mod tests {
     use super::*;
