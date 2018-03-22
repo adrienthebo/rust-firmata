@@ -1,5 +1,3 @@
-#[allow(dead_code)]
-
 pub const START_SYSEX: u8 = 0xF0;
 pub const END_SYSEX: u8 = 0xF7;
 
@@ -37,14 +35,20 @@ pub enum SysexMsg<'a> {
 }
 
 
+#[derive(Debug,PartialEq)]
+pub enum FirmataMsg<'a> {
+    Sysex(SysexMsg<'a>)
+}
+
+
 named!(capability_query<&[u8], SysexMsg>,
        map!(tag!(&[CAPABILITY_QUERY]), |_| SysexMsg::CapabilityQuery));
 
 
 named!(capability_response_entry<&[u8], PinCapability>,
        do_parse!(
-           mode: take!(1)                   >>
-           res: take!(1)                    >>
+           mode: take!(1) >>
+           res: take!(1)  >>
            (PinCapability {
                res: res[0],
                mode: match mode[0] {
@@ -64,8 +68,7 @@ named!(capability_response_list<&[u8], Vec<PinCapability>>,
            pair: many_till!(
                call!(capability_response_entry),
                tag!(&[CAPABILITY_RESPONSE_SEP])
-           )
-           >> (pair.0)
+           ) >> (pair.0)
         )
 );
 
