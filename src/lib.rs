@@ -9,3 +9,4 @@ pub use self::parser::*;
 pub mod parser;
 
 pub mod errors;
+pub mod client;

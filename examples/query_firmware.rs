@@ -18,5 +18,5 @@ fn main() {
         Ok(())
     }).expect("Unable to reconfigure serial device");
 
-    println!("Firmware status: {:?}", client::query_firmware(&mut sp));
+    println!("Result of firmware query: {:?}", client::query_firmware(&mut sp));
 }
