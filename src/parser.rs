@@ -64,10 +64,21 @@ named!(capability_response_list<&[u8], Vec<PinCapability>>,
            pair: many_till!(
                call!(capability_response_entry),
                tag!(&[CAPABILITY_RESPONSE_SEP])
-           ) >> (pair.0)
+           )
+           >> (pair.0)
         )
 );
 
+
+named!(capability_response<&[u8], SysexMsg>,
+       do_parse!(
+           tag!(&[CAPABILITY_RESPONSE]) >>
+           pair: many_till!(
+               call!(capability_response_list),
+               peek!(tag!(&[END_SYSEX]))
+           ) >> (SysexMsg::CapabilityResponse(pair.0))
+       )
+);
 
 
 named!(query_firmware<&[u8], SysexMsg>,
@@ -98,8 +109,9 @@ named!(sysex<&[u8], SysexMsg>,
        delimited!(
            tag!(&[START_SYSEX]),
            alt!(
-               query_firmware |
-               capability_query
+               query_firmware      |
+               capability_query    |
+               capability_response
            ),
            tag!(&[END_SYSEX])
        )
@@ -231,4 +243,55 @@ mod tests {
             ))
         );
     }
+
+    #[test]
+    fn parses_sysex_capability_response() {
+        let msg = [
+            START_SYSEX,
+            CAPABILITY_RESPONSE,
+            0x00, 0x01,
+            0x01, 0x01,
+            0x02, 0x0A,
+            0x03, 0x08,
+            CAPABILITY_RESPONSE_SEP,
+            0x00, 0x01,
+            0x01, 0x01,
+            0x02, 0x0A,
+            0x03, 0x08,
+            CAPABILITY_RESPONSE_SEP,
+            0x00, 0x01,
+            0x01, 0x01,
+            0x02, 0x0A,
+            0x03, 0x08,
+            CAPABILITY_RESPONSE_SEP,
+            END_SYSEX
+        ];
+
+        let pin_capabilities = vec![
+            vec![
+                PinCapability { mode: PinMode::DigitalInput, res: 1 },
+                PinCapability { mode: PinMode::DigitalOutput, res: 1 },
+                PinCapability { mode: PinMode::AnalogInput, res: 10 },
+                PinCapability { mode: PinMode::PWM, res: 8 },
+            ],
+            vec![
+                PinCapability { mode: PinMode::DigitalInput, res: 1 },
+                PinCapability { mode: PinMode::DigitalOutput, res: 1 },
+                PinCapability { mode: PinMode::AnalogInput, res: 10 },
+                PinCapability { mode: PinMode::PWM, res: 8 },
+            ],
+            vec![
+                PinCapability { mode: PinMode::DigitalInput, res: 1 },
+                PinCapability { mode: PinMode::DigitalOutput, res: 1 },
+                PinCapability { mode: PinMode::AnalogInput, res: 10 },
+                PinCapability { mode: PinMode::PWM, res: 8 },
+            ]
+        ];
+
+        assert_eq!(
+            sysex(&msg[..]),
+            Ok((EMPTY, SysexMsg::CapabilityResponse(pin_capabilities)))
+        );
+    }
+
 }
