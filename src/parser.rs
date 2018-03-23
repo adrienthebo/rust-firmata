@@ -11,13 +11,7 @@ named!(capability_response_entry<&[u8], PinCapability>,
            res: take!(1)  >>
            (PinCapability {
                res: res[0],
-               mode: match mode[0] {
-                   0x00 => PinMode::DigitalInput,
-                   0x01 => PinMode::DigitalOutput,
-                   0x02 => PinMode::AnalogInput,
-                   0x03 => PinMode::PWM,
-                   n    => PinMode::Other(n)
-               }
+               mode: PinMode::from(mode[0])
            })
         )
 );

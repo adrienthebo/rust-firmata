@@ -16,7 +16,26 @@ pub enum PinMode {
     DigitalOutput,
     AnalogInput,
     PWM,
+    Servo,
+    Shift,
+    I2C,
     Other(u8)
+}
+
+
+impl From<u8> for PinMode {
+    fn from(item: u8) -> Self {
+        match item {
+           0x00 => PinMode::DigitalInput,
+           0x01 => PinMode::DigitalOutput,
+           0x02 => PinMode::AnalogInput,
+           0x03 => PinMode::PWM,
+           0x04 => PinMode::Servo,
+           0x05 => PinMode::Shift,
+           0x06 => PinMode::I2C,
+           n    => PinMode::Other(n)
+       }
+    }
 }
 
 
