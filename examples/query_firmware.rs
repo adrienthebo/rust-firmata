@@ -5,6 +5,7 @@ extern crate env_logger;
 use std::str;
 use serial::SerialPort;
 use firmata::client;
+use firmata::FirmataMsg;
 
 fn main() {
     env_logger::init();
@@ -23,8 +24,11 @@ fn main() {
 
     let msg = client::query_firmware(&mut sp).expect("Firmata firmware query failed");
 
-    if let firmata::FirmataMsg::Sysex(firmata::SysexMsg::QueryFirmware { major, minor, firmware_name }) = msg {
-        println!("Firmware query: Firmata v{}.{} '{}'", major, minor, str::from_utf8(&firmware_name).unwrap());
+    if let FirmataMsg::QueryFirmware { major, minor, firmware_name } = msg {
+        println!("Firmware query: Firmata v{}.{} '{}'",
+                 major,
+                 minor,
+                 str::from_utf8(&firmware_name).unwrap());
     } else {
         println!("How the what the - {:?}", msg);
     }

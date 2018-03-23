@@ -24,7 +24,7 @@ pub struct PinCapability {
 
 
 #[derive(Debug,PartialEq)]
-pub enum SysexMsg {
+pub enum FirmataMsg {
     QueryFirmware {
         major: u8,
         minor: u8,
@@ -35,14 +35,8 @@ pub enum SysexMsg {
 }
 
 
-#[derive(Debug,PartialEq)]
-pub enum FirmataMsg {
-    Sysex(SysexMsg)
-}
-
-
-named!(capability_query<&[u8], SysexMsg>,
-       map!(tag!(&[CAPABILITY_QUERY]), |_| SysexMsg::CapabilityQuery));
+named!(capability_query<&[u8], FirmataMsg>,
+       map!(tag!(&[CAPABILITY_QUERY]), |_| FirmataMsg::CapabilityQuery));
 
 
 named!(capability_response_entry<&[u8], PinCapability>,
@@ -73,24 +67,24 @@ named!(capability_response_list<&[u8], Vec<PinCapability>>,
 );
 
 
-named!(capability_response<&[u8], SysexMsg>,
+named!(capability_response<&[u8], FirmataMsg>,
        do_parse!(
            tag!(&[CAPABILITY_RESPONSE]) >>
            pair: many_till!(
                call!(capability_response_list),
                peek!(tag!(&[END_SYSEX]))
-           ) >> (SysexMsg::CapabilityResponse(pair.0))
+           ) >> (FirmataMsg::CapabilityResponse(pair.0))
        )
 );
 
 
-named!(query_firmware<&[u8], SysexMsg>,
+named!(query_firmware<&[u8], FirmataMsg>,
        do_parse!(
            tag!(&[QUERY_FIRMWARE])                     >>
            major: take!(1)                             >>
            minor: take!(1)                             >>
            name: take_while!(|chr: u8| chr.is_ascii()) >>
-           (SysexMsg::QueryFirmware {
+           (FirmataMsg::QueryFirmware {
                major: major[0],
                minor: minor[0],
                firmware_name: name.to_vec()
@@ -99,7 +93,7 @@ named!(query_firmware<&[u8], SysexMsg>,
 );
 
 
-named!(sysex<&[u8], SysexMsg>,
+named!(sysex<&[u8], FirmataMsg>,
        delimited!(
            tag!(&[START_SYSEX]),
            alt!(
@@ -114,7 +108,7 @@ named!(sysex<&[u8], SysexMsg>,
 
 named!(pub parse<&[u8], FirmataMsg>,
        alt!(
-           map!(sysex, |msg| FirmataMsg::Sysex(msg))
+           sysex
         )
 );
 
@@ -132,7 +126,7 @@ mod tests {
             sysex(&msg[..]),
             Ok((
                 EMPTY,
-                SysexMsg::QueryFirmware {
+                FirmataMsg::QueryFirmware {
                     major: 2,
                     minor: 4,
                     firmware_name: b"StandardFirmata.ino".to_vec(),
@@ -147,7 +141,7 @@ mod tests {
 
         assert_eq!(
             sysex(&msg[..]),
-            Ok((EMPTY, SysexMsg::CapabilityQuery))
+            Ok((EMPTY, FirmataMsg::CapabilityQuery))
         );
     }
 
@@ -273,7 +267,7 @@ mod tests {
 
         assert_eq!(
             sysex(&msg[..]),
-            Ok((EMPTY, SysexMsg::CapabilityResponse(pin_capabilities)))
+            Ok((EMPTY, FirmataMsg::CapabilityResponse(pin_capabilities)))
         );
     }
 
