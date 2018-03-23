@@ -13,7 +13,7 @@ use nom;
 fn read<T>(conn: &mut T) -> Result<FirmataMsg>
     where T: io::Read + io::Write {
     let mut retries = 0;
-    let max_retries = 10;
+    let max_retries = 5;
 
     let mut buf: Vec<u8> = Vec::new();
 
@@ -44,7 +44,6 @@ fn read<T>(conn: &mut T) -> Result<FirmataMsg>
                     if retries < max_retries {
                         retries += 1;
                         warn!("Firmata read timed out, retrying ({} of {})", retries, max_retries);
-                        thread::sleep(time::Duration::from_millis(100));
                     } else {
                         break Err("Command timed out after multiple retries".into())
                     }
