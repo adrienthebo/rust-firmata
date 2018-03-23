@@ -10,7 +10,7 @@ use protocol::*;
 
 use nom;
 
-fn read<T>(conn: &mut T) -> Result<FirmataMsg>
+pub fn read<T>(conn: &mut T) -> Result<FirmataMsg>
     where T: io::Read + io::Write {
     let mut retries = 0;
     let max_retries = 5;
@@ -54,14 +54,34 @@ fn read<T>(conn: &mut T) -> Result<FirmataMsg>
     }
 }
 
+
 pub fn query_firmware<T>(conn: &mut T) -> Result<FirmataMsg>
     where T: io::Read + io::Write {
     conn.write_all(&[START_SYSEX, QUERY_FIRMWARE, END_SYSEX])?;
     read(conn)
 }
 
+
 pub fn capabilities<T>(conn: &mut T) -> Result<FirmataMsg>
     where T: io::Read + io::Write {
     conn.write_all(&[START_SYSEX, CAPABILITY_QUERY, END_SYSEX])?;
     read(conn)
+}
+
+
+pub fn set_pin_mode<T>(conn: &mut T, pin: u8, mode: PinMode) -> io::Result<()>
+    where T: io::Read + io::Write {
+    conn.write_all(&[START_SYSEX, SET_PIN_MODE, pin, mode.into(), END_SYSEX])
+}
+
+
+pub fn analog_report<T>(conn: &mut T, pin: u8, state: bool) -> io::Result<()>
+    where T: io::Read + io::Write {
+
+    if pin >= 16 {
+        Err(io::Error::new(io::ErrorKind::InvalidInput, "Analog pin index >= 16"))
+    } else {
+        let mode: u8 = if state { 1 } else { 0 };
+        conn.write_all(&[ANALOG_REPORT | pin, mode])
+    }
 }

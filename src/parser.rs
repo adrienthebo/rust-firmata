@@ -53,6 +53,22 @@ named!(query_firmware<&[u8], FirmataMsg>,
 );
 
 
+named!(analog_read<&[u8], FirmataMsg>,
+       bits!(
+           do_parse!(
+               tag_bits!(u8, 4, ANALOG_READ) >>
+               pin: take_bits!(u8, 4)        >>
+               msb: take_bits!(u8, 8)        >>
+               lsb: take_bits!(u8, 8)        >>
+               (FirmataMsg::AnalogRead {
+                       pin: pin,
+                       value: ((msb as u16) << 7) | (lsb as u16)
+               })
+           )
+       )
+);
+
+
 named!(sysex<&[u8], FirmataMsg>,
        delimited!(
            tag!(&[START_SYSEX]),
@@ -68,7 +84,8 @@ named!(sysex<&[u8], FirmataMsg>,
 
 named!(pub parse<&[u8], FirmataMsg>,
        alt!(
-           sysex
+           sysex       |
+           analog_read
         )
 );
 
@@ -231,4 +248,19 @@ mod tests {
         );
     }
 
+    #[test]
+    fn parses_analog_read() {
+        let pin = 15;
+        let value: u16 = 616;
+
+        let msb = ((value & !0x7F) >> 7) as u8;
+        let lsb = (value & 0x7F) as u8;
+
+        let msg: [u8; 3] = [ANALOG_READ << 4 | pin, msb, lsb];
+
+        assert_eq!(
+            parse(&msg[..]),
+                Ok((EMPTY, FirmataMsg::AnalogRead { pin, value }))
+        );
+    }
 }
