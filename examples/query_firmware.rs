@@ -22,14 +22,16 @@ fn main() {
         Ok(())
     }).expect("Unable to reconfigure serial device");
 
-    let msg = client::query_firmware(&mut sp).expect("Firmata firmware query failed");
-
-    if let FirmataMsg::QueryFirmware { major, minor, firmware_name } = msg {
-        println!("Firmware query: Firmata v{}.{} '{}'",
-                 major,
-                 minor,
-                 str::from_utf8(&firmware_name).unwrap());
-    } else {
-        println!("How the what the - {:?}", msg);
+    match client::query_firmware(&mut sp) {
+        Ok(FirmataMsg::QueryFirmware { major, minor, firmware_name }) => {
+            println!("Firmware query: Firmata v{}.{} '{}'",
+                     major,
+                     minor,
+                     str::from_utf8(&firmware_name).unwrap());
+        },
+        Ok(n) => {
+            println!("That's odd - firmware query did not return a firmware response! ({:?})", n);
+        },
+        Err(e) => { panic!("Firmata firmware query failed: {:?}", e) }
     }
 }
