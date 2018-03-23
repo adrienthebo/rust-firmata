@@ -56,7 +56,7 @@ named!(capability_response_entry<&[u8], PinCapability>,
                    0x01 => PinMode::DigitalOutput,
                    0x02 => PinMode::AnalogInput,
                    0x03 => PinMode::PWM,
-                   n @ _ => PinMode::Other(n)
+                   n    => PinMode::Other(n)
                }
            })
         )
