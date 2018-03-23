@@ -59,3 +59,9 @@ pub fn query_firmware<T>(conn: &mut T) -> Result<FirmataMsg>
     conn.write_all(&[START_SYSEX, QUERY_FIRMWARE, END_SYSEX])?;
     read(conn)
 }
+
+pub fn capabilities<T>(conn: &mut T) -> Result<FirmataMsg>
+    where T: io::Read + io::Write {
+    conn.write_all(&[START_SYSEX, CAPABILITY_QUERY, END_SYSEX])?;
+    read(conn)
+}
