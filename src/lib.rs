@@ -12,3 +12,6 @@ pub mod parser;
 
 pub mod errors;
 pub mod client;
+
+pub use self::protocol::*;
+pub mod protocol;

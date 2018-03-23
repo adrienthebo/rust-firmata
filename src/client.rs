@@ -6,10 +6,11 @@
 use std::{io, thread, time};
 use errors::*;
 use parser;
+use protocol::*;
 
 use nom;
 
-fn read<T>(conn: &mut T) -> Result<parser::FirmataMsg>
+fn read<T>(conn: &mut T) -> Result<FirmataMsg>
     where T: io::Read + io::Write {
     let mut retries = 0;
     let max_retries = 10;
@@ -54,8 +55,8 @@ fn read<T>(conn: &mut T) -> Result<parser::FirmataMsg>
     }
 }
 
-pub fn query_firmware<T>(conn: &mut T) -> Result<parser::FirmataMsg>
+pub fn query_firmware<T>(conn: &mut T) -> Result<FirmataMsg>
     where T: io::Read + io::Write {
-    conn.write_all(&[parser::START_SYSEX, parser::QUERY_FIRMWARE, parser::END_SYSEX])?;
+    conn.write_all(&[START_SYSEX, QUERY_FIRMWARE, END_SYSEX])?;
     read(conn)
 }
