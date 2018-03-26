@@ -55,6 +55,12 @@ pub fn read<T>(conn: &mut T) -> Result<FirmataMsg>
 }
 
 
+pub fn reset<T>(conn: &mut T) -> io::Result<()>
+    where T: io::Read + io::Write {
+    conn.write_all(&[RESET])
+}
+
+
 pub fn query_firmware<T>(conn: &mut T) -> Result<FirmataMsg>
     where T: io::Read + io::Write {
     conn.write_all(&[START_SYSEX, QUERY_FIRMWARE, END_SYSEX])?;
