@@ -16,6 +16,8 @@ pub const ANALOG_REPORT: u8 = 0xC0;
 /// The nybble representing an analog read report
 pub const ANALOG_READ: u8 = 0xE;
 
+pub const RESET: u8 = 0xFF;
+
 
 #[derive(Debug,PartialEq)]
 pub enum PinMode {
