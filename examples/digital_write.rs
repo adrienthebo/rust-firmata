@@ -48,7 +48,7 @@ fn main() {
     client::set_pin_mode(&mut sp, pin, firmata::protocol::PinMode::DigitalOutput);
     thread::sleep(time::Duration::from_millis(100));
 
-    loop {
+    for _ in 0..6  {
         println!("{}: {}", pin, state);
         client::digital_write(&mut sp, pin, state);
         thread::sleep(time::Duration::from_millis(500));
