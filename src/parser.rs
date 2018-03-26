@@ -69,6 +69,18 @@ named!(analog_read<&[u8], FirmataMsg>,
 );
 
 
+named!(protocol_version<&[u8], FirmataMsg>,
+       do_parse!(
+           tag!(&[PROTOCOL_VERSION]) >>
+           major: take!(1)           >>
+           minor: take!(1)           >>
+           (FirmataMsg::ProtocolVersion {
+               major: major[0],
+               minor: minor[0]
+           })
+       )
+);
+
 named!(sysex<&[u8], FirmataMsg>,
        delimited!(
            tag!(&[START_SYSEX]),
@@ -85,7 +97,8 @@ named!(sysex<&[u8], FirmataMsg>,
 named!(pub parse<&[u8], FirmataMsg>,
        alt!(
            sysex       |
-           analog_read
+           analog_read |
+           protocol_version
         )
 );
 
@@ -261,6 +274,14 @@ mod tests {
         assert_eq!(
             parse(&msg[..]),
                 Ok((EMPTY, FirmataMsg::AnalogRead { pin, value }))
+        );
+    }
+
+    #[test]
+    fn parses_protol_version() {
+        assert_eq!(
+            parse(&[PROTOCOL_VERSION, 2, 6][..]),
+                Ok((EMPTY, FirmataMsg::ProtocolVersion { major: 2, minor: 6 }))
         );
     }
 }

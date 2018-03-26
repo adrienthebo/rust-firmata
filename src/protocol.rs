@@ -7,6 +7,7 @@ pub const ANALOG_REPORT: u8 = 0xC0;
 /// The nybble representing an analog read report
 pub const ANALOG_READ: u8 = 0xE;
 
+
 pub const SET_PIN_MODE: u8 = 0xF4;
 pub const DIGITAL_WRITE: u8 = 0xF5;
 
@@ -28,6 +29,9 @@ pub const CAPABILITY_RESPONSE: u8 = 0x6C;
 /// Firmata capability response record separator
 pub const CAPABILITY_RESPONSE_SEP: u8 = 0x7F;
 
+
+/// The Firmata protocol version
+pub const PROTOCOL_VERSION: u8 = 0xF9;
 
 /// Firmata device reset request
 pub const RESET: u8 = 0xFF;
@@ -97,5 +101,9 @@ pub enum FirmataMsg {
     AnalogRead {
         pin: u8,
         value: u16
+    },
+    ProtocolVersion {
+        major: u8,
+        minor: u8
     }
 }
