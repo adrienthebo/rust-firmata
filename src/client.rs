@@ -92,3 +92,15 @@ pub fn analog_report<T>(conn: &mut T, pin: u8, state: bool) -> io::Result<()>
         conn.write_all(&[ANALOG_REPORT | pin, mode])
     }
 }
+
+
+pub fn digital_write<T>(conn: &mut T, pin: u8, state: bool) -> io::Result<()>
+    where T: io::Read + io::Write {
+
+    if pin >= 128 {
+        Err(io::Error::new(io::ErrorKind::InvalidInput, "Digital pin index >= 128"))
+    } else {
+        let mode: u8 = if state { 1 } else { 0 };
+        conn.write_all(&[DIGITAL_WRITE, pin, mode])
+    }
+}

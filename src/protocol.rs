@@ -10,6 +10,7 @@ pub const CAPABILITY_RESPONSE: u8 = 0x6c;
 pub const CAPABILITY_RESPONSE_SEP: u8 = 0x7F;
 
 pub const SET_PIN_MODE: u8 = 0xF4;
+pub const DIGITAL_WRITE: u8 = 0xF5;
 
 pub const ANALOG_REPORT: u8 = 0xC0;
 
