@@ -1,22 +1,35 @@
 //! Firmata protocol definitions.
 
-pub const START_SYSEX: u8 = 0xF0;
-pub const END_SYSEX: u8 = 0xF7;
 
-pub const QUERY_FIRMWARE: u8 = 0x79;
-
-pub const CAPABILITY_QUERY: u8 = 0x6B;
-pub const CAPABILITY_RESPONSE: u8 = 0x6C;
-pub const CAPABILITY_RESPONSE_SEP: u8 = 0x7F;
-
-pub const SET_PIN_MODE: u8 = 0xF4;
-pub const DIGITAL_WRITE: u8 = 0xF5;
-
+/// Firmata analog pin value reporting
 pub const ANALOG_REPORT: u8 = 0xC0;
 
 /// The nybble representing an analog read report
 pub const ANALOG_READ: u8 = 0xE;
 
+pub const SET_PIN_MODE: u8 = 0xF4;
+pub const DIGITAL_WRITE: u8 = 0xF5;
+
+
+/// Firmata/MIDI sysex message begin
+pub const START_SYSEX: u8 = 0xF0;
+/// Firmata/MIDI sysex message end
+pub const END_SYSEX: u8 = 0xF7;
+
+
+/// Firmata sysex firmware query.
+pub const QUERY_FIRMWARE: u8 = 0x79;
+
+
+/// Firmata sysex pin capability query
+pub const CAPABILITY_QUERY: u8 = 0x6B;
+/// Firmata sysex pin capability response
+pub const CAPABILITY_RESPONSE: u8 = 0x6C;
+/// Firmata capability response record separator
+pub const CAPABILITY_RESPONSE_SEP: u8 = 0x7F;
+
+
+/// Firmata device reset request
 pub const RESET: u8 = 0xFF;
 
 
