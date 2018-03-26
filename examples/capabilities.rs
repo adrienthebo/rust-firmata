@@ -2,7 +2,6 @@ extern crate firmata;
 extern crate serial;
 extern crate env_logger;
 
-use std::str;
 use serial::SerialPort;
 use firmata::client;
 use firmata::FirmataMsg;

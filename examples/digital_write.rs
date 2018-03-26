@@ -24,7 +24,8 @@ fn main() {
 
 
     println!("Resetting device and delaying for 5 seconds.");
-    client::reset(&mut sp);
+    client::reset(&mut sp)
+        .expect("Unable to send Firmata reset command");
     thread::sleep(time::Duration::new(5, 0));
 
     client::read(&mut sp);
@@ -45,12 +46,14 @@ fn main() {
     let pin = 49;
     let mut state = true;
 
-    client::set_pin_mode(&mut sp, pin, firmata::protocol::PinMode::DigitalOutput);
+    client::set_pin_mode(&mut sp, pin, firmata::protocol::PinMode::DigitalOutput)
+        .expect("Unable to send pin mode change command");
     thread::sleep(time::Duration::from_millis(100));
 
-    for _ in 0..6  {
+    for _ in 0..2  {
         println!("{}: {}", pin, state);
-        client::digital_write(&mut sp, pin, state);
+        client::digital_write(&mut sp, pin, state)
+            .expect("Unable to send digital write command");
         thread::sleep(time::Duration::from_millis(500));
         state = !state;
     }

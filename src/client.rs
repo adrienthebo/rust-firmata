@@ -3,7 +3,7 @@
 //! The client runs on the controlling host and treats the microcontroller
 //! as a server.
 
-use std::{io, thread, time};
+use std::io;
 use errors::*;
 use parser;
 use protocol::*;
