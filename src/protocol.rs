@@ -6,7 +6,7 @@ pub const END_SYSEX: u8 = 0xF7;
 pub const QUERY_FIRMWARE: u8 = 0x79;
 
 pub const CAPABILITY_QUERY: u8 = 0x6B;
-pub const CAPABILITY_RESPONSE: u8 = 0x6c;
+pub const CAPABILITY_RESPONSE: u8 = 0x6C;
 pub const CAPABILITY_RESPONSE_SEP: u8 = 0x7F;
 
 pub const SET_PIN_MODE: u8 = 0xF4;
