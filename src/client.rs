@@ -27,6 +27,7 @@ pub fn read<T>(conn: &mut T) -> Result<FirmataMsg>
                 match parser::parse(&buf[..]) {
                     Ok((_, msg)) => {
                         info!("Parse complete. Message: {:?}", msg);
+                        trace!("Parsed buffer: {:?}", &buf);
                         break Ok(msg)
                     },
                     Err(nom::Err::Incomplete(_)) => {
