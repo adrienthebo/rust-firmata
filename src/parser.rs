@@ -58,8 +58,8 @@ named!(analog_read<&[u8], FirmataMsg>,
            do_parse!(
                tag_bits!(u8, 4, ANALOG_READ) >>
                pin: take_bits!(u8, 4)        >>
-               msb: take_bits!(u8, 8)        >>
                lsb: take_bits!(u8, 8)        >>
+               msb: take_bits!(u8, 8)        >>
                (FirmataMsg::AnalogRead {
                        pin: pin,
                        value: ((msb as u16) << 7) | (lsb as u16)
@@ -256,7 +256,7 @@ mod tests {
         let msb = ((value & !0x7F) >> 7) as u8;
         let lsb = (value & 0x7F) as u8;
 
-        let msg: [u8; 3] = [ANALOG_READ << 4 | pin, msb, lsb];
+        let msg: [u8; 3] = [ANALOG_READ << 4 | pin, lsb, msb];
 
         assert_eq!(
             parse(&msg[..]),
