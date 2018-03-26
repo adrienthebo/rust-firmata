@@ -4,8 +4,10 @@
 /// Firmata analog pin value reporting
 pub const ANALOG_REPORT: u8 = 0xC0;
 
-/// The nybble representing an analog read report
-pub const ANALOG_READ: u8 = 0xE;
+/// The nybble representing an analog write or read report
+pub const ANALOG_MESSAGE: u8 = 0xE;
+/// The nybble representing a digitital write or read report
+pub const DIGITAL_MESSAGE: u8 = 0x9;
 
 
 pub const SET_PIN_MODE: u8 = 0xF4;
