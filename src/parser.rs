@@ -278,7 +278,7 @@ mod tests {
     }
 
     #[test]
-    fn parses_protol_version() {
+    fn parses_protocol_version() {
         assert_eq!(
             parse(&[PROTOCOL_VERSION, 2, 6][..]),
                 Ok((EMPTY, FirmataMsg::ProtocolVersion { major: 2, minor: 6 }))
