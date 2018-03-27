@@ -46,10 +46,10 @@ pub fn read<T>(conn: &mut T) -> Result<FirmataMsg>
                         retries += 1;
                         warn!("Firmata read timed out, retrying ({} of {})", retries, max_retries);
                     } else {
-                        break Err("Command timed out after multiple retries".into())
+                        break Err(e.into())
                     }
                 }
-                _ => break Err(e).chain_err(|| "I/O error")
+                _ => break Err(e.into())
             }
         }
     }
