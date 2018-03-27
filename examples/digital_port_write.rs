@@ -43,18 +43,21 @@ fn main() {
         Err(e) => { panic!("Firmata firmware query failed: {:?}", e) }
     }
 
+    // Determine the port and port value associated with pin 49.
     let pin = 49;
-    let mut state = true;
+    let port = pin / 8;
+    let value = 1 << (pin % 8);
+    let mut mask = 0xFF;
 
     client::set_pin_mode(&mut sp, pin, firmata::protocol::PinMode::DigitalOutput)
         .expect("Unable to send pin mode change command");
     thread::sleep(time::Duration::from_millis(100));
 
     for _ in 0..2  {
-        println!("{}: {}", pin, state);
-        client::digital_write(&mut sp, pin, state)
+        println!("Port {}: {:08b}", port, value & mask);
+        client::digital_port_write(&mut sp, port, value & mask)
             .expect("Unable to send digital write command");
         thread::sleep(time::Duration::from_millis(500));
-        state = !state;
+        mask = !mask;
     }
 }

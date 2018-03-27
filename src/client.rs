@@ -94,16 +94,12 @@ pub fn analog_report<T>(conn: &mut T, pin: u8, state: bool) -> io::Result<()>
 }
 
 
-pub fn digital_write<T>(conn: &mut T, pin: u8, state: bool) -> io::Result<()>
+/// Write a value to a port register of the Firmata board.
+pub fn digital_port_write<T>(conn: &mut T, port: u8, value: u8) -> io::Result<()>
     where T: io::Read + io::Write {
-    if pin >= 128 {
-        Err(io::Error::new(io::ErrorKind::InvalidInput, "Digital pin index >= 128"))
+    if port >= 16 {
+        Err(io::Error::new(io::ErrorKind::InvalidInput, "port index >= 16"))
     } else {
-        let mode: u16 = if state { 1 } else { 0 };
-
-        let port = pin / 8;
-        let offset = pin % 8;
-        let value: u16 = mode << offset;
         let lsb: u8 = (value & 0x7F) as u8;
         let msb: u8 = ((value & !0x7F) >> 7) as u8;
 
