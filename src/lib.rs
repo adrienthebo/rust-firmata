@@ -15,5 +15,3 @@ pub mod client;
 
 pub use self::protocol::*;
 pub mod protocol;
-
-pub mod board;
