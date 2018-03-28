@@ -7,11 +7,14 @@ extern crate error_chain;
 #[macro_use]
 extern crate log;
 
+pub use self::protocol::*;
+pub mod protocol;
+
 pub use self::parser::*;
 pub mod parser;
 
 pub mod errors;
 pub mod client;
 
-pub use self::protocol::*;
-pub mod protocol;
+pub use self::board::*;
+pub mod board;
