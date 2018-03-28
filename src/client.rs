@@ -26,7 +26,7 @@ pub fn read<T>(conn: &mut T) -> Result<FirmataMsg>
             Ok(_) => {
                 match parser::parse(&buf[..]) {
                     Ok((_, msg)) => {
-                        info!("Parse complete. Message: {:?}", msg);
+                        debug!("Parse complete. Message: {:?}", msg);
                         trace!("Parsed buffer: {:?}", &buf);
                         break Ok(msg)
                     },
@@ -44,7 +44,7 @@ pub fn read<T>(conn: &mut T) -> Result<FirmataMsg>
                 io::ErrorKind::TimedOut => {
                     if retries < max_retries {
                         retries += 1;
-                        warn!("Firmata read timed out, retrying ({} of {})", retries, max_retries);
+                        debug!("Firmata read timed out, retrying ({} of {})", retries, max_retries);
                     } else {
                         break Err(e.into())
                     }
