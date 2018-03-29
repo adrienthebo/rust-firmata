@@ -13,8 +13,8 @@ pub mod protocol;
 pub use self::parser::*;
 pub mod parser;
 
-pub mod errors;
 pub mod client;
+pub mod errors;
 
 pub use self::board::*;
 pub mod board;

@@ -1,9 +1,7 @@
 use protocol::*;
 
-
 named!(capability_query<&[u8], FirmataMsg>,
        map!(tag!(&[CAPABILITY_QUERY]), |_| FirmataMsg::CapabilityQuery));
-
 
 named!(capability_response_entry<&[u8], PinCapability>,
        do_parse!(
@@ -16,7 +14,6 @@ named!(capability_response_entry<&[u8], PinCapability>,
         )
 );
 
-
 named!(capability_response_list<&[u8], Vec<PinCapability>>,
        do_parse!(
            pair: many_till!(
@@ -25,7 +22,6 @@ named!(capability_response_list<&[u8], Vec<PinCapability>>,
            ) >> (pair.0)
         )
 );
-
 
 named!(capability_response<&[u8], FirmataMsg>,
        do_parse!(
@@ -36,7 +32,6 @@ named!(capability_response<&[u8], FirmataMsg>,
            ) >> (FirmataMsg::CapabilityResponse(pair.0))
        )
 );
-
 
 named!(query_firmware<&[u8], FirmataMsg>,
        do_parse!(
@@ -52,7 +47,6 @@ named!(query_firmware<&[u8], FirmataMsg>,
        )
 );
 
-
 named!(analog_read<&[u8], FirmataMsg>,
        bits!(
            do_parse!(
@@ -67,7 +61,6 @@ named!(analog_read<&[u8], FirmataMsg>,
            )
        )
 );
-
 
 named!(protocol_version<&[u8], FirmataMsg>,
        do_parse!(
@@ -92,7 +85,6 @@ named!(sysex<&[u8], FirmataMsg>,
            tag!(&[END_SYSEX])
        )
 );
-
 
 named!(pub parse<&[u8], FirmataMsg>,
        alt!(
@@ -129,10 +121,7 @@ mod tests {
     fn parses_sysex_capability_query() {
         let msg = b"\xF0\x6B\xF7";
 
-        assert_eq!(
-            sysex(&msg[..]),
-            Ok((EMPTY, FirmataMsg::CapabilityQuery))
-        );
+        assert_eq!(sysex(&msg[..]), Ok((EMPTY, FirmataMsg::CapabilityQuery)));
     }
 
     #[test]
@@ -151,63 +140,66 @@ mod tests {
         );
     }
 
-
     #[test]
     fn parses_pin_capability_list_0() {
         let msg = [CAPABILITY_RESPONSE_SEP];
 
-        assert_eq!(
-            capability_response_list(&msg[..]),
-            Ok((
-                EMPTY,
-                Vec::new()
-            ))
-        );
+        assert_eq!(capability_response_list(&msg[..]), Ok((EMPTY, Vec::new())));
     }
 
     #[test]
     fn parses_pin_capability_list_1() {
-        let msg = [
-            0x00, 0x01,
-            CAPABILITY_RESPONSE_SEP
-        ];
+        let msg = [0x00, 0x01, CAPABILITY_RESPONSE_SEP];
 
         let pin_capabilities = vec![
-            PinCapability { mode: PinMode::DigitalInput, res: 1 },
+            PinCapability {
+                mode: PinMode::DigitalInput,
+                res: 1,
+            },
         ];
 
         assert_eq!(
             capability_response_list(&msg[..]),
-            Ok((
-                EMPTY,
-                pin_capabilities
-            ))
+            Ok((EMPTY, pin_capabilities))
         );
     }
 
     #[test]
     fn parses_pin_capability_list_4() {
         let msg = [
-            0x00, 0x01,
-            0x01, 0x01,
-            0x02, 0x0A,
-            0x03, 0x08,
-            CAPABILITY_RESPONSE_SEP
+            0x00,
+            0x01,
+            0x01,
+            0x01,
+            0x02,
+            0x0A,
+            0x03,
+            0x08,
+            CAPABILITY_RESPONSE_SEP,
         ];
 
         let pin_capabilities = vec![
-            PinCapability { mode: PinMode::DigitalInput, res: 1 },
-            PinCapability { mode: PinMode::DigitalOutput, res: 1 },
-            PinCapability { mode: PinMode::AnalogInput, res: 10 },
-            PinCapability { mode: PinMode::PWM, res: 8 },
+            PinCapability {
+                mode: PinMode::DigitalInput,
+                res: 1,
+            },
+            PinCapability {
+                mode: PinMode::DigitalOutput,
+                res: 1,
+            },
+            PinCapability {
+                mode: PinMode::AnalogInput,
+                res: 10,
+            },
+            PinCapability {
+                mode: PinMode::PWM,
+                res: 8,
+            },
         ];
 
         assert_eq!(
             capability_response_list(&msg[..]),
-            Ok((
-                EMPTY,
-                pin_capabilities
-            ))
+            Ok((EMPTY, pin_capabilities))
         );
     }
 
@@ -216,43 +208,91 @@ mod tests {
         let msg = [
             START_SYSEX,
             CAPABILITY_RESPONSE,
-            0x00, 0x01,
-            0x01, 0x01,
-            0x02, 0x0A,
-            0x03, 0x08,
+            0x00,
+            0x01,
+            0x01,
+            0x01,
+            0x02,
+            0x0A,
+            0x03,
+            0x08,
             CAPABILITY_RESPONSE_SEP,
-            0x00, 0x01,
-            0x01, 0x01,
-            0x02, 0x0A,
-            0x03, 0x08,
+            0x00,
+            0x01,
+            0x01,
+            0x01,
+            0x02,
+            0x0A,
+            0x03,
+            0x08,
             CAPABILITY_RESPONSE_SEP,
-            0x00, 0x01,
-            0x01, 0x01,
-            0x02, 0x0A,
-            0x03, 0x08,
+            0x00,
+            0x01,
+            0x01,
+            0x01,
+            0x02,
+            0x0A,
+            0x03,
+            0x08,
             CAPABILITY_RESPONSE_SEP,
-            END_SYSEX
+            END_SYSEX,
         ];
 
         let pin_capabilities = vec![
             vec![
-                PinCapability { mode: PinMode::DigitalInput, res: 1 },
-                PinCapability { mode: PinMode::DigitalOutput, res: 1 },
-                PinCapability { mode: PinMode::AnalogInput, res: 10 },
-                PinCapability { mode: PinMode::PWM, res: 8 },
+                PinCapability {
+                    mode: PinMode::DigitalInput,
+                    res: 1,
+                },
+                PinCapability {
+                    mode: PinMode::DigitalOutput,
+                    res: 1,
+                },
+                PinCapability {
+                    mode: PinMode::AnalogInput,
+                    res: 10,
+                },
+                PinCapability {
+                    mode: PinMode::PWM,
+                    res: 8,
+                },
             ],
             vec![
-                PinCapability { mode: PinMode::DigitalInput, res: 1 },
-                PinCapability { mode: PinMode::DigitalOutput, res: 1 },
-                PinCapability { mode: PinMode::AnalogInput, res: 10 },
-                PinCapability { mode: PinMode::PWM, res: 8 },
+                PinCapability {
+                    mode: PinMode::DigitalInput,
+                    res: 1,
+                },
+                PinCapability {
+                    mode: PinMode::DigitalOutput,
+                    res: 1,
+                },
+                PinCapability {
+                    mode: PinMode::AnalogInput,
+                    res: 10,
+                },
+                PinCapability {
+                    mode: PinMode::PWM,
+                    res: 8,
+                },
             ],
             vec![
-                PinCapability { mode: PinMode::DigitalInput, res: 1 },
-                PinCapability { mode: PinMode::DigitalOutput, res: 1 },
-                PinCapability { mode: PinMode::AnalogInput, res: 10 },
-                PinCapability { mode: PinMode::PWM, res: 8 },
-            ]
+                PinCapability {
+                    mode: PinMode::DigitalInput,
+                    res: 1,
+                },
+                PinCapability {
+                    mode: PinMode::DigitalOutput,
+                    res: 1,
+                },
+                PinCapability {
+                    mode: PinMode::AnalogInput,
+                    res: 10,
+                },
+                PinCapability {
+                    mode: PinMode::PWM,
+                    res: 8,
+                },
+            ],
         ];
 
         assert_eq!(
@@ -273,7 +313,7 @@ mod tests {
 
         assert_eq!(
             parse(&msg[..]),
-                Ok((EMPTY, FirmataMsg::AnalogRead { pin, value }))
+            Ok((EMPTY, FirmataMsg::AnalogRead { pin, value }))
         );
     }
 
@@ -281,7 +321,7 @@ mod tests {
     fn parses_protocol_version() {
         assert_eq!(
             parse(&[PROTOCOL_VERSION, 2, 6][..]),
-                Ok((EMPTY, FirmataMsg::ProtocolVersion { major: 2, minor: 6 }))
+            Ok((EMPTY, FirmataMsg::ProtocolVersion { major: 2, minor: 6 }))
         );
     }
 }

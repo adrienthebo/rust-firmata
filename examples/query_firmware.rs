@@ -1,11 +1,11 @@
+extern crate env_logger;
 extern crate firmata;
 extern crate serial;
-extern crate env_logger;
 
-use std::str;
-use serial::SerialPort;
-use firmata::client;
 use firmata::FirmataMsg;
+use firmata::client;
+use serial::SerialPort;
+use std::str;
 
 fn main() {
     env_logger::init();
@@ -23,15 +23,24 @@ fn main() {
     }).expect("Unable to reconfigure serial device");
 
     match client::query_firmware(&mut sp) {
-        Ok(FirmataMsg::QueryFirmware { major, minor, firmware_name }) => {
-            println!("Firmware query: Firmata v{}.{} '{}'",
-                     major,
-                     minor,
-                     str::from_utf8(&firmware_name).unwrap());
-        },
+        Ok(FirmataMsg::QueryFirmware {
+            major,
+            minor,
+            firmware_name,
+        }) => {
+            println!(
+                "Firmware query: Firmata v{}.{} '{}'",
+                major,
+                minor,
+                str::from_utf8(&firmware_name).unwrap()
+            );
+        }
         Ok(n) => {
-            println!("That's odd - firmware query did not return a firmware response! ({:?})", n);
-        },
-        Err(e) => { panic!("Firmata firmware query failed: {:?}", e) }
+            println!(
+                "That's odd - firmware query did not return a firmware response! ({:?})",
+                n
+            );
+        }
+        Err(e) => panic!("Firmata firmware query failed: {:?}", e),
     }
 }

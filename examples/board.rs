@@ -4,10 +4,10 @@ extern crate serial;
 extern crate log;
 extern crate env_logger;
 
-use std::{thread, time};
-use serial::SerialPort;
-use firmata::{board, Board, client, protocol};
 use firmata::errors::*;
+use firmata::{board, client, protocol, Board};
+use serial::SerialPort;
+use std::{thread, time};
 
 fn drain_readbuf<T: SerialPort>(conn: &mut T) {
     let mut buf = [0; 1];
@@ -22,7 +22,7 @@ fn update_board<T: SerialPort>(conn: &mut T, board: &mut Board) {
         board.update(msg);
         ctr += 1;
         if ctr > 5 {
-            break
+            break;
         }
     }
 }
@@ -42,7 +42,6 @@ fn run() -> Result<()> {
         Ok(())
     }).expect("Unable to reconfigure serial device");
 
-
     let mut board = Board::default();
 
     info!("Resetting Firmata device.");
@@ -56,7 +55,12 @@ fn run() -> Result<()> {
     if let Some(board::Protocol(major, minor)) = board.protocol {
         println!("Firmata protocol: v{}.{}", major, minor);
     }
-    if let Some(board::Firmware { major, minor, ref name }) = board.firmware {
+    if let Some(board::Firmware {
+        major,
+        minor,
+        ref name,
+    }) = board.firmware
+    {
         println!("Firmata firmware: v{}.{} '{}'", major, minor, name);
     }
 
@@ -75,7 +79,7 @@ fn run() -> Result<()> {
     client::analog_report(&mut sp, 14, true)?;
     thread::sleep(time::Duration::from_millis(100));
 
-    for _ in 0 .. 100 {
+    for _ in 0..100 {
         update_board(&mut sp, &mut board);
         let ref pins = board.pins;
         println!("Analog value: {:?}", pins);

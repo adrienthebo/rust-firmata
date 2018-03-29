@@ -1,15 +1,14 @@
+extern crate env_logger;
 extern crate firmata;
 extern crate serial;
-extern crate env_logger;
 
-use serial::SerialPort;
-use firmata::client;
 use firmata::FirmataMsg;
+use firmata::client;
+use serial::SerialPort;
 
 fn print_capabilities(vec: Vec<Vec<firmata::protocol::PinCapability>>) {
     println!("Pin capabilities:");
     for (i, capabilities) in vec.iter().enumerate() {
-
         if capabilities.len() > 0 {
             println!("\t- pin {}:", i);
             for cap in capabilities {
@@ -38,10 +37,13 @@ fn main() {
     match client::capabilities(&mut sp) {
         Ok(FirmataMsg::CapabilityResponse(vec)) => {
             print_capabilities(vec);
-        },
+        }
         Ok(n) => {
-            println!("That's odd - firmware query did not return a firmware response! ({:?})", n);
-        },
-        Err(e) => { panic!("Firmata firmware query failed: {:?}", e) }
+            println!(
+                "That's odd - firmware query did not return a firmware response! ({:?})",
+                n
+            );
+        }
+        Err(e) => panic!("Firmata firmware query failed: {:?}", e),
     }
 }
