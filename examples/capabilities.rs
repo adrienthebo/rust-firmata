@@ -4,7 +4,9 @@ extern crate serial;
 
 use firmata::FirmataMsg;
 use firmata::client;
+use firmata::errors::*;
 use serial::SerialPort;
+use std::{thread, time};
 
 fn print_capabilities(vec: Vec<Vec<firmata::protocol::PinCapability>>) {
     println!("Pin capabilities:");
@@ -19,7 +21,7 @@ fn print_capabilities(vec: Vec<Vec<firmata::protocol::PinCapability>>) {
     }
 }
 
-fn main() {
+fn run() -> firmata::errors::Result<()> {
     env_logger::init();
 
     let device = "/dev/ttyACM0";
@@ -34,16 +36,37 @@ fn main() {
         Ok(())
     }).expect("Unable to reconfigure serial device");
 
-    match client::capabilities(&mut sp) {
-        Ok(FirmataMsg::CapabilityResponse(vec)) => {
-            print_capabilities(vec);
+    client::resync(&mut sp).chain_err(|| "Unable to resynchronize Firmata connection")?;
+    thread::sleep(time::Duration::from_millis(100));
+    client::capabilities(&mut sp).chain_err(|| "Unable to send capability query")?;
+    thread::sleep(time::Duration::from_millis(20));
+
+    for _ in 0..5 {
+        match client::read(&mut sp) {
+            Ok(FirmataMsg::CapabilityResponse(vec)) => {
+                print_capabilities(vec);
+                return Ok(());
+            }
+            Ok(m) => println!("Ignoring unexpected message {:?}", m),
+            Err(e) => return Err(e.into()),
         }
-        Ok(n) => {
-            println!(
-                "That's odd - firmware query did not return a firmware response! ({:?})",
-                n
-            );
+    }
+    Err(ErrorKind::UnexpectedResponse.into())
+}
+
+fn main() {
+    if let Err(ref e) = run() {
+        println!("error: {:?}", e);
+
+        for e in e.iter().skip(1) {
+            println!("caused by: {}", e);
         }
-        Err(e) => panic!("Firmata firmware query failed: {:?}", e),
+
+        // The backtrace is not always generated. Try to run this example
+        // with `RUST_BACKTRACE=1`.
+        if let Some(backtrace) = e.backtrace() {
+            println!("backtrace: {:?}", backtrace);
+        }
+        ::std::process::exit(1);
     }
 }

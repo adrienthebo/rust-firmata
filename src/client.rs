@@ -12,14 +12,14 @@ use nom;
 
 pub fn read<T>(conn: &mut T) -> Result<FirmataMsg>
 where
-    T: ::connection::RW
+    T: ::connection::RW,
 {
     read_rt(conn, 0)
 }
 
 pub fn read_rt<T>(conn: &mut T, max_retries: usize) -> Result<FirmataMsg>
 where
-    T: ::connection::RW
+    T: ::connection::RW,
 {
     let mut retries = 0;
     let mut buf: Vec<u8> = Vec::new();
@@ -52,7 +52,7 @@ where
                             retries, max_retries
                         );
                     } else {
-                        break Err(e.into())
+                        break Err(e.into());
                     }
                 }
                 _ => break Err(e.into()),
@@ -63,35 +63,35 @@ where
 
 pub fn reset<T>(conn: &mut T) -> io::Result<()>
 where
-    T: ::connection::RW
+    T: ::connection::RW,
 {
     conn.write_all(&[RESET])
 }
 
 pub fn query_firmware<T>(conn: &mut T) -> io::Result<()>
 where
-    T: ::connection::RW
+    T: ::connection::RW,
 {
     conn.write_all(&[START_SYSEX, QUERY_FIRMWARE, END_SYSEX])
 }
 
 pub fn capabilities<T>(conn: &mut T) -> io::Result<()>
 where
-    T: ::connection::RW
+    T: ::connection::RW,
 {
     conn.write_all(&[START_SYSEX, CAPABILITY_QUERY, END_SYSEX])
 }
 
 pub fn set_pin_mode<T>(conn: &mut T, pin: u8, mode: PinMode) -> io::Result<()>
 where
-    T: ::connection::RW
+    T: ::connection::RW,
 {
     conn.write_all(&[START_SYSEX, SET_PIN_MODE, pin, mode.into(), END_SYSEX])
 }
 
 pub fn analog_report<T>(conn: &mut T, pin: u8, state: bool) -> io::Result<()>
 where
-    T: ::connection::RW
+    T: ::connection::RW,
 {
     if pin >= 16 {
         Err(io::Error::new(
@@ -107,7 +107,7 @@ where
 /// Write a value to a port register of the Firmata board.
 pub fn digital_port_write<T>(conn: &mut T, port: u8, value: u8) -> io::Result<()>
 where
-    T: ::connection::RW
+    T: ::connection::RW,
 {
     if port >= 16 {
         Err(io::Error::new(
@@ -131,18 +131,20 @@ where
 /// the device is in a known good state.
 pub fn resync<T>(conn: &mut T) -> io::Result<()>
 where
-    T: ::connection::RW
+    T: ::connection::RW,
 {
     let max_retries = 5;
-    for attempt in 0 .. max_retries {
-        debug!("Attempting to resync Firmata connection ({} of {})", attempt + 1, max_retries);
+    for attempt in 0..max_retries {
+        debug!(
+            "Attempting to resync Firmata connection ({} of {})",
+            attempt + 1,
+            max_retries
+        );
         reset(conn)?;
 
-        for _ in 0 .. 10 {
+        for _ in 0..10 {
             match read(conn) {
-                Ok(FirmataMsg::ProtocolVersion { .. }) => {
-                    return Ok(())
-                },
+                Ok(FirmataMsg::ProtocolVersion { .. }) => return Ok(()),
                 Ok(m) => {
                     trace!("Discarding message {:?}", m);
                 }
@@ -150,5 +152,8 @@ where
             }
         }
     }
-    Err(io::Error::new(io::ErrorKind::NotConnected, "Could not resynchronize Firmata connection"))
+    Err(io::Error::new(
+        io::ErrorKind::NotConnected,
+        "Could not resynchronize Firmata connection",
+    ))
 }

@@ -4,10 +4,11 @@ extern crate serial;
 
 use firmata::FirmataMsg;
 use firmata::client;
+use firmata::errors::*;
 use serial::SerialPort;
-use std::{str, thread, time};
+use std::{thread, time};
 
-fn main() {
+fn run() -> firmata::errors::Result<()> {
     env_logger::init();
 
     let device = "/dev/ttyACM0";
@@ -22,33 +23,8 @@ fn main() {
         Ok(())
     }).expect("Unable to reconfigure serial device");
 
-    println!("Resetting device and delaying for 5 seconds.");
-    client::reset(&mut sp).expect("Unable to send Firmata reset command");
-    thread::sleep(time::Duration::new(5, 0));
-
-    client::read(&mut sp);
-
-    match client::query_firmware(&mut sp) {
-        Ok(FirmataMsg::QueryFirmware {
-            major,
-            minor,
-            firmware_name,
-        }) => {
-            println!(
-                "Firmware query: Firmata v{}.{} '{}'",
-                major,
-                minor,
-                str::from_utf8(&firmware_name).unwrap()
-            );
-        }
-        Ok(n) => {
-            println!(
-                "That's odd - firmware query did not return a firmware response! ({:?})",
-                n
-            );
-        }
-        Err(e) => panic!("Firmata firmware query failed: {:?}", e),
-    }
+    client::resync(&mut sp).chain_err(|| "Unable to resynchronize Firmata connection")?;
+    thread::sleep(time::Duration::from_millis(100));
 
     // Determine the port and port value associated with pin 49.
     let pin = 49;
@@ -57,14 +33,32 @@ fn main() {
     let mut mask = 0xFF;
 
     client::set_pin_mode(&mut sp, pin, firmata::protocol::PinMode::DigitalOutput)
-        .expect("Unable to send pin mode change command");
+        .chain_err(|| "Unable to send pin mode change command")?;
     thread::sleep(time::Duration::from_millis(100));
 
     for _ in 0..2 {
         println!("Port {}: {:08b}", port, value & mask);
         client::digital_port_write(&mut sp, port, value & mask)
-            .expect("Unable to send digital write command");
+            .chain_err(|| "Unable to send digital write command")?;
         thread::sleep(time::Duration::from_millis(500));
         mask = !mask;
+    }
+    Ok(())
+}
+
+fn main() {
+    if let Err(ref e) = run() {
+        println!("error: {:?}", e);
+
+        for e in e.iter().skip(1) {
+            println!("caused by: {}", e);
+        }
+
+        // The backtrace is not always generated. Try to run this example
+        // with `RUST_BACKTRACE=1`.
+        if let Some(backtrace) = e.backtrace() {
+            println!("backtrace: {:?}", backtrace);
+        }
+        ::std::process::exit(1);
     }
 }
