@@ -52,10 +52,7 @@ where
                             retries, max_retries
                         );
                     } else {
-                        break Err(Error::with_chain(
-                            e,
-                            format!("Firmata read timed out after {} retries", retries),
-                        ));
+                        break Err(e.into())
                     }
                 }
                 _ => break Err(e.into()),
@@ -123,4 +120,35 @@ where
 
         conn.write_all(&[DIGITAL_MESSAGE << 4 | port, lsb, msb])
     }
+}
+
+/// Resynchronize the serial connection to the Firmata device.
+///
+/// A firmata device can be in an arbitrary state when we initially connect,
+/// and we may have a buffer of stale information that needs to be cleaned.
+/// The easiest way to resolve this is to send several reset messages and drain
+/// the serial buffer until we receive the ProtocolVersion message, which means
+/// the device is in a known good state.
+pub fn resync<T>(conn: &mut T) -> io::Result<()>
+where
+    T: ::connection::RW
+{
+    let max_retries = 5;
+    for attempt in 0 .. max_retries {
+        debug!("Attempting to resync Firmata connection ({} of {})", attempt + 1, max_retries);
+        reset(conn)?;
+
+        for _ in 0 .. 10 {
+            match read(conn) {
+                Ok(FirmataMsg::ProtocolVersion { .. }) => {
+                    return Ok(())
+                },
+                Ok(m) => {
+                    trace!("Discarding message {:?}", m);
+                }
+                Err(_) => {}
+            }
+        }
+    }
+    Err(io::Error::new(io::ErrorKind::NotConnected, "Could not resynchronize Firmata connection"))
 }
