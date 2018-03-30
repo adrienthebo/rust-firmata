@@ -12,11 +12,16 @@ use nom;
 
 pub fn read<T>(conn: &mut T) -> Result<FirmataMsg>
 where
-    T: io::Read + io::Write,
+    T: ::connection::RW
+{
+    read_rt(conn, 0)
+}
+
+pub fn read_rt<T>(conn: &mut T, max_retries: usize) -> Result<FirmataMsg>
+where
+    T: ::connection::RW
 {
     let mut retries = 0;
-    let max_retries = 5;
-
     let mut buf: Vec<u8> = Vec::new();
 
     loop {
@@ -49,7 +54,7 @@ where
                     } else {
                         break Err(Error::with_chain(
                             e,
-                            "Firmata read timed out after multiple retries",
+                            format!("Firmata read timed out after {} retries", retries),
                         ));
                     }
                 }
@@ -61,35 +66,35 @@ where
 
 pub fn reset<T>(conn: &mut T) -> io::Result<()>
 where
-    T: io::Read + io::Write,
+    T: ::connection::RW
 {
     conn.write_all(&[RESET])
 }
 
 pub fn query_firmware<T>(conn: &mut T) -> io::Result<()>
 where
-    T: io::Read + io::Write,
+    T: ::connection::RW
 {
     conn.write_all(&[START_SYSEX, QUERY_FIRMWARE, END_SYSEX])
 }
 
 pub fn capabilities<T>(conn: &mut T) -> io::Result<()>
 where
-    T: io::Read + io::Write,
+    T: ::connection::RW
 {
     conn.write_all(&[START_SYSEX, CAPABILITY_QUERY, END_SYSEX])
 }
 
 pub fn set_pin_mode<T>(conn: &mut T, pin: u8, mode: PinMode) -> io::Result<()>
 where
-    T: io::Read + io::Write,
+    T: ::connection::RW
 {
     conn.write_all(&[START_SYSEX, SET_PIN_MODE, pin, mode.into(), END_SYSEX])
 }
 
 pub fn analog_report<T>(conn: &mut T, pin: u8, state: bool) -> io::Result<()>
 where
-    T: io::Read + io::Write,
+    T: ::connection::RW
 {
     if pin >= 16 {
         Err(io::Error::new(
@@ -105,7 +110,7 @@ where
 /// Write a value to a port register of the Firmata board.
 pub fn digital_port_write<T>(conn: &mut T, port: u8, value: u8) -> io::Result<()>
 where
-    T: io::Read + io::Write,
+    T: ::connection::RW
 {
     if port >= 16 {
         Err(io::Error::new(
