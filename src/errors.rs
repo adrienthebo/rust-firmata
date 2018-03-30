@@ -8,6 +8,9 @@ error_chain! {
     }
 
     errors {
+        UnreadableMsg {
+            description("Incomplete or interrupted Firmata message")
+        }
         CommandFailed {
             description("Firmata command could not be processed")
         }

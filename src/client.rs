@@ -35,8 +35,7 @@ where
                     debug!("Parse results incomplete, fetching more data.");
                 }
                 Err(nom::Err::Error(e)) | Err(nom::Err::Failure(e)) => {
-                    println!("Parse error: {:?}", e);
-                    break Err(ErrorKind::CommandFailed.into());
+                    break Err(ErrorKind::UnreadableMsg.into());
                 }
             },
             Err(e) => match e.kind() {
