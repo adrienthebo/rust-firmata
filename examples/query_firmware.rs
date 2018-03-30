@@ -4,10 +4,11 @@ extern crate serial;
 
 use firmata::FirmataMsg;
 use firmata::client;
+use firmata::errors::*;
 use serial::SerialPort;
 use std::str;
 
-fn main() {
+fn run() -> firmata::errors::Result<()> {
     env_logger::init();
 
     let device = "/dev/ttyACM0";
@@ -22,7 +23,9 @@ fn main() {
         Ok(())
     }).expect("Unable to reconfigure serial device");
 
-    match client::query_firmware(&mut sp) {
+    client::query_firmware(&mut sp).chain_err(|| "Unable to send firmware query command")?;
+
+    match client::read(&mut sp) {
         Ok(FirmataMsg::QueryFirmware {
             major,
             minor,
@@ -34,13 +37,26 @@ fn main() {
                 minor,
                 str::from_utf8(&firmware_name).unwrap()
             );
+            Ok(())
         }
-        Ok(n) => {
-            println!(
-                "That's odd - firmware query did not return a firmware response! ({:?})",
-                n
-            );
+        Ok(_) => Err(ErrorKind::UnexpectedResponse.into()),
+        Err(e) => Err(e.into()),
+    }
+}
+
+fn main() {
+    if let Err(ref e) = run() {
+        println!("error: {:?}", e);
+
+        for e in e.iter().skip(1) {
+            println!("caused by: {}", e);
         }
-        Err(e) => panic!("Firmata firmware query failed: {:?}", e),
+
+        // The backtrace is not always generated. Try to run this example
+        // with `RUST_BACKTRACE=1`.
+        if let Some(backtrace) = e.backtrace() {
+            println!("backtrace: {:?}", backtrace);
+        }
+        ::std::process::exit(1);
     }
 }

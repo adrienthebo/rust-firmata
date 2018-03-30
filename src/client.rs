@@ -47,7 +47,10 @@ where
                             retries, max_retries
                         );
                     } else {
-                        break Err(e.into());
+                        break Err(Error::with_chain(
+                            e,
+                            "Firmata read timed out after multiple retries",
+                        ));
                     }
                 }
                 _ => break Err(e.into()),
@@ -63,20 +66,18 @@ where
     conn.write_all(&[RESET])
 }
 
-pub fn query_firmware<T>(conn: &mut T) -> Result<FirmataMsg>
+pub fn query_firmware<T>(conn: &mut T) -> io::Result<()>
 where
     T: io::Read + io::Write,
 {
-    conn.write_all(&[START_SYSEX, QUERY_FIRMWARE, END_SYSEX])?;
-    read(conn)
+    conn.write_all(&[START_SYSEX, QUERY_FIRMWARE, END_SYSEX])
 }
 
-pub fn capabilities<T>(conn: &mut T) -> Result<FirmataMsg>
+pub fn capabilities<T>(conn: &mut T) -> io::Result<()>
 where
     T: io::Read + io::Write,
 {
-    conn.write_all(&[START_SYSEX, CAPABILITY_QUERY, END_SYSEX])?;
-    read(conn)
+    conn.write_all(&[START_SYSEX, CAPABILITY_QUERY, END_SYSEX])
 }
 
 pub fn set_pin_mode<T>(conn: &mut T, pin: u8, mode: PinMode) -> io::Result<()>

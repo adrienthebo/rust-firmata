@@ -1,5 +1,5 @@
-use std::collections::HashMap;
 use protocol::FirmataMsg;
+use std::collections::HashMap;
 
 #[derive(Debug, Default)]
 pub struct Pin {

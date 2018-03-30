@@ -14,5 +14,8 @@ error_chain! {
         CommandFailed {
             description("Firmata command could not be processed")
         }
+        UnexpectedResponse {
+            description("Unexpected Firmata response")
+        }
     }
 }
