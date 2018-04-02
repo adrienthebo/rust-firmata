@@ -6,7 +6,7 @@
 use errors::*;
 use parser;
 use protocol::*;
-use std::io;
+use std::{io,thread, time};
 
 use nom;
 
@@ -133,6 +133,9 @@ pub fn resync<T>(conn: &mut T) -> io::Result<()>
 where
     T: ::connection::RW,
 {
+    debug!("Issuing Firmata reset");
+    reset(conn)?;
+
     let max_retries = 5;
     for attempt in 0..max_retries {
         debug!(
@@ -140,15 +143,16 @@ where
             attempt + 1,
             max_retries
         );
-        reset(conn)?;
+        query_firmware(conn)?;
 
-        for _ in 0..10 {
+        for _ in 0.. 20 {
             match read(conn) {
-                Ok(FirmataMsg::ProtocolVersion { .. }) => return Ok(()),
+                Ok(FirmataMsg::ProtocolVersion { .. }) |
+                Ok(FirmataMsg::QueryFirmware { .. }) => return Ok(()),
                 Ok(m) => {
                     trace!("Discarding message {:?}", m);
                 }
-                Err(_) => {}
+                Err(e) => { trace!("Serial read returned error {:?}", e); }
             }
         }
     }
