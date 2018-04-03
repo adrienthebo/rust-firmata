@@ -111,6 +111,16 @@ where
         }
     }
 
+    pub fn capabilities(&mut self) -> Result<()> {
+        match *self {
+            Connection::Open { ref mut inner, .. } => {
+                ::client::capabilities(inner)
+                    .map_err(|e| e.into())
+            },
+            Connection::Closed => Err(ErrorKind::ConnectionClosed.into())
+        }
+    }
+
     pub fn read(&mut self) -> Result<::protocol::FirmataMsg> {
         match *self {
             Connection::Open { ref mut inner, .. } => {
