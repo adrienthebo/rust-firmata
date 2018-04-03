@@ -29,7 +29,6 @@ fn run() -> Result<()> {
     thread::sleep(time::Duration::from_millis(100));
 
     let mux = Arc::new(Mutex::new(conn));
-
     let handle = firmata::worker::Worker::spawn(&mux);
 
     for _ in 0..100 {

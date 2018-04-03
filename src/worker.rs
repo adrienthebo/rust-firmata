@@ -18,9 +18,11 @@ impl Worker {
 
     pub fn run(&self) {
         while let Some(lock) = self.inner.upgrade() {
-            let mut conn = lock.lock().unwrap();
-            conn.update();
-            thread::sleep(time::Duration::from_millis(5));
+            {
+                let mut conn = lock.lock().unwrap();
+                conn.update();
+            }
+            thread::sleep(time::Duration::from_millis(20));
         }
     }
 }

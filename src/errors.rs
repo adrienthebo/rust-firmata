@@ -4,13 +4,16 @@ error_chain! {
     }
 
     foreign_links {
-        IO(::std::io::Error);
+        Io(::std::io::Error);
         Serial(::serial_core::Error);
     }
 
     errors {
         UnreadableMsg {
-            description("Incomplete or interrupted Firmata message")
+            description("Interrupted or unparseable Firmata message")
+        }
+        PartialMsg {
+            description("Incomplete Firmata message")
         }
         CommandFailed {
             description("Firmata command could not be processed")

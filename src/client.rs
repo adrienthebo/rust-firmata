@@ -23,37 +23,54 @@ where
 {
     let mut retries = 0;
     let mut buf: Vec<u8> = Vec::new();
-
     loop {
-        // Expand the buffer by one element for the read
-        let len = buf.len() + 1;
-        buf.resize(len, 0);
-
-        match conn.read(&mut buf[len - 1..]) {
-            Ok(_) => match parser::parse(&buf[..]) {
-                Ok((_, msg)) => {
-                    debug!("Parse complete. Message: {:?}", msg);
-                    trace!("Parsed buffer: {:?}", &buf);
-                    break Ok(msg);
-                }
-                Err(nom::Err::Incomplete(_)) => {
-                    debug!("Parse results incomplete, fetching more data.");
-                }
-                Err(nom::Err::Error(e)) | Err(nom::Err::Failure(e)) => {
-                    break Err(ErrorKind::UnreadableMsg.into());
+        match read_with_buf(conn, 3, &mut buf) {
+            Err(Error(ErrorKind::PartialMsg, _)) => {
+                debug!("Continuing to read from Firmata stream");
+            },
+            Err(Error(ErrorKind::Io(err), _)) => {
+                match err.kind() {
+                    io::ErrorKind::TimedOut if retries < max_retries => {
+                        retries += 1;
+                        debug!("Firmata read timed out, retrying ({} of {})", retries, max_retries);
+                    },
+                    _ => break Err(err.into())
                 }
             },
-            Err(e) => match e.kind() {
-                io::ErrorKind::TimedOut if retries < max_retries => {
-                    retries += 1;
-                    debug!(
-                        "Firmata read timed out, retrying ({} of {})",
-                        retries, max_retries
-                    );
-                }
-                _ => break Err(Error::with_chain(e, "Firmata stream read failed")),
+            Err(Error(kind, _)) => {
+                warn!("kind: {:?}", kind);
+                break Err(kind.into())
             },
+            Err(e) => { break Err(e) },
+            msg => break msg
         }
+    }
+}
+
+pub fn read_with_buf<T>(conn: &mut T, max_retries: usize, buf: &mut Vec<u8>) -> Result<FirmataMsg>
+where
+    T: ::connection::RW,
+{
+    // Expand the buffer by one element for the read
+    let len = buf.len() + 1;
+    buf.resize(len, 0);
+
+    match conn.read(&mut buf[len - 1..]) {
+        Ok(_) => match parser::parse(&buf[..]) {
+            Ok((_, msg)) => {
+                debug!("Parse complete. Message: {:?}", msg);
+                trace!("Parsed buffer: {:?}", &buf);
+                Ok(msg)
+            }
+            Err(nom::Err::Incomplete(_)) => {
+                trace!("Parse results incomplete. Buffer: {:?}", &buf);
+                Err(ErrorKind::PartialMsg.into())
+            }
+            Err(nom::Err::Error(e)) | Err(nom::Err::Failure(e)) => {
+                Err(ErrorKind::UnreadableMsg.into())
+            }
+        },
+        Err(e) => Err(e.into())
     }
 }
 
