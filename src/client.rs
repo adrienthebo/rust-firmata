@@ -14,7 +14,7 @@ pub fn read<T>(conn: &mut T) -> Result<FirmataMsg>
 where
     T: ::connection::RW,
 {
-    read_rt(conn, 0)
+    read_rt(conn, 3)
 }
 
 pub fn read_rt<T>(conn: &mut T, max_retries: usize) -> Result<FirmataMsg>
@@ -44,18 +44,14 @@ where
                 }
             },
             Err(e) => match e.kind() {
-                io::ErrorKind::TimedOut => {
-                    if retries < max_retries {
-                        retries += 1;
-                        debug!(
-                            "Firmata read timed out, retrying ({} of {})",
-                            retries, max_retries
-                        );
-                    } else {
-                        break Err(e.into());
-                    }
+                io::ErrorKind::TimedOut if retries < max_retries => {
+                    retries += 1;
+                    debug!(
+                        "Firmata read timed out, retrying ({} of {})",
+                        retries, max_retries
+                    );
                 }
-                _ => break Err(e.into()),
+                _ => break Err(Error::with_chain(e, "Firmata stream read failed")),
             },
         }
     }
@@ -145,7 +141,7 @@ where
         );
         query_firmware(conn)?;
 
-        for _ in 0.. 20 {
+        for _ in 0.. 30 {
             match read(conn) {
                 Ok(FirmataMsg::ProtocolVersion { .. }) |
                 Ok(FirmataMsg::QueryFirmware { .. }) => return Ok(()),

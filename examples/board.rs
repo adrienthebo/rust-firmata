@@ -1,13 +1,13 @@
+extern crate env_logger;
 extern crate firmata;
 extern crate serial;
-extern crate env_logger;
 
 use firmata::errors::*;
 use firmata::{client, protocol, Board};
 use serial::SerialPort;
 use std::{thread, time};
 
-fn update_board<T: SerialPort>(conn: &mut T, board: &mut Board) {
+fn update_board<T: SerialPort + Send>(conn: &mut T, board: &mut Board) {
     let mut ctr = 0;
     while let Ok(msg) = client::read(conn) {
         board.update(msg);
@@ -60,8 +60,7 @@ fn run() -> Result<()> {
         println!("Analog value: {:?}", pins);
     }
 
-    client::digital_port_write(&mut sp, port, 0)
-        .chain_err(|| "Unable to disable system power")?;
+    client::digital_port_write(&mut sp, port, 0).chain_err(|| "Unable to disable system power")?;
     Ok(())
 }
 

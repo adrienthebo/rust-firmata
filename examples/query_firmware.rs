@@ -3,31 +3,19 @@ extern crate firmata;
 extern crate serial;
 
 use firmata::FirmataMsg;
-use firmata::client;
+use firmata::connection::Connection;
 use firmata::errors::*;
-use serial::SerialPort;
 use std::{str, thread, time};
 
 fn run() -> firmata::errors::Result<()> {
     env_logger::init();
 
     let device = "/dev/ttyACM0";
-    let mut sp = serial::open(device).expect("Unable to open serial device");
+    let mut conn = Connection::open(device)?;
+    conn.resync()?;
+    conn.query_firmware()?;
 
-    sp.reconfigure(&|settings| {
-        settings.set_baud_rate(serial::Baud57600).unwrap();
-        settings.set_char_size(serial::Bits8);
-        settings.set_parity(serial::ParityNone);
-        settings.set_stop_bits(serial::Stop1);
-        settings.set_flow_control(serial::FlowNone);
-        Ok(())
-    }).expect("Unable to reconfigure serial device");
-
-    client::resync(&mut sp).chain_err(|| "Unable to resynchronize Firmata connection")?;
-    thread::sleep(time::Duration::from_millis(100));
-    client::query_firmware(&mut sp).chain_err(|| "Unable to send firmware query command")?;
-
-    match client::read(&mut sp) {
+    match conn.read() {
         Ok(FirmataMsg::QueryFirmware {
             major,
             minor,

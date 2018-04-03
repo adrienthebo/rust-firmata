@@ -5,6 +5,7 @@ error_chain! {
 
     foreign_links {
         IO(::std::io::Error);
+        Serial(::serial_core::Error);
     }
 
     errors {
@@ -16,6 +17,9 @@ error_chain! {
         }
         UnexpectedResponse {
             description("Unexpected Firmata response")
+        }
+        ConnectionClosed {
+            description("Serial connection to Firmata device closed")
         }
     }
 }
