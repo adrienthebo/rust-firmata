@@ -6,6 +6,8 @@ use firmata::errors::*;
 use firmata::protocol::PinMode;
 use firmata::connection::Connection;
 use std::{thread, time};
+use std::sync::{Arc, Mutex};
+
 
 fn run() -> Result<()> {
     env_logger::init();
@@ -26,19 +28,20 @@ fn run() -> Result<()> {
     conn.analog_report(14, true)?;
     thread::sleep(time::Duration::from_millis(100));
 
+    let mux = Arc::new(Mutex::new(conn));
+
+    let handle = firmata::worker::Worker::spawn(&mux);
+
     for _ in 0..100 {
-        let mut ctr = 0;
-        while let Ok(_) = conn.update() {
-            ctr += 1;
-            if ctr > 5 {
-                break;
-            }
+        {
+            let ref conn = mux.lock().unwrap();
+            let ref pins = conn.board().unwrap().pins;
+            println!("Analog value: {:?}", pins);
         }
-        let ref pins = conn.board().unwrap().pins;
-        println!("Analog value: {:?}", pins);
+        thread::sleep(time::Duration::from_millis(50));
     }
 
-    conn.digital_port_write(port, 0)?;
+    mux.lock().unwrap().digital_port_write(port, 0)?;
     Ok(())
 }
 

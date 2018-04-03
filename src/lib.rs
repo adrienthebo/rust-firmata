@@ -13,6 +13,7 @@ pub mod parser;
 pub mod client;
 pub mod connection;
 pub mod errors;
+pub mod worker;
 
 pub use self::board::*;
 pub mod board;

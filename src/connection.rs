@@ -1,6 +1,9 @@
+//! A persistent connection to a Firmata board, associated with the state
+//! of that board.
+
 use ::board::Board;
 use ::errors::*;
-use std::io;
+use std::{io, time};
 
 use serial_unix;
 use serial_core as serial;
@@ -58,6 +61,16 @@ where
         match *self {
             Connection::Open { ref mut inner, .. } => Some(inner),
             Connection::Closed => None
+        }
+    }
+
+    pub fn reset(&mut self) -> Result<()> {
+        match *self {
+            Connection::Open { ref mut inner, .. } => {
+                ::client::reset(inner)
+                    .map_err(|e| e.into())
+            },
+            Connection::Closed => Err(ErrorKind::ConnectionClosed.into())
         }
     }
 
@@ -148,6 +161,7 @@ impl Connection<serial_unix::TTYPort>
         use ::std::path::Path;
         serial_unix::TTYPort::open(Path::new(path))
             .and_then(|mut inner| {
+                inner.set_timeout(time::Duration::from_millis(5))?;
                 inner.configure(&SERIAL_SETTINGS)?;
                 Ok(Connection::Open { inner, board: Board::default() })
             })
