@@ -3,40 +3,16 @@ extern crate firmata;
 extern crate serial;
 
 use firmata::errors::*;
-use firmata::{client, protocol, Board};
-use serial::SerialPort;
+use firmata::protocol::PinMode;
+use firmata::connection::Connection;
 use std::{thread, time};
-
-fn update_board<T: SerialPort + Send>(conn: &mut T, board: &mut Board) {
-    let mut ctr = 0;
-    while let Ok(msg) = client::read(conn) {
-        board.update(msg);
-        ctr += 1;
-        if ctr > 5 {
-            break;
-        }
-    }
-}
 
 fn run() -> Result<()> {
     env_logger::init();
 
     let device = "/dev/ttyACM0";
-    let mut sp = serial::open(device).expect("Unable to open serial device");
-
-    sp.reconfigure(&|settings| {
-        settings.set_baud_rate(serial::Baud57600).unwrap();
-        settings.set_char_size(serial::Bits8);
-        settings.set_parity(serial::ParityNone);
-        settings.set_stop_bits(serial::Stop1);
-        settings.set_flow_control(serial::FlowNone);
-        Ok(())
-    }).expect("Unable to reconfigure serial device");
-
-    let mut board = Board::default();
-
-    client::resync(&mut sp).chain_err(|| "Unable to resynchronize Firmata connection")?;
-    thread::sleep(time::Duration::from_millis(100));
+    let mut conn = Connection::open(device)?;
+    conn.resync()?;
 
     let power_en = 49;
     let port = power_en / 8;
@@ -44,23 +20,25 @@ fn run() -> Result<()> {
 
     let br_sens_b = 68;
 
-    client::set_pin_mode(&mut sp, power_en, protocol::PinMode::DigitalOutput)?;
-    thread::sleep(time::Duration::from_millis(20));
-    client::digital_port_write(&mut sp, port, port_mode)
-        .chain_err(|| "Unable to enable system power")?;
-
-    client::set_pin_mode(&mut sp, br_sens_b, firmata::protocol::PinMode::AnalogInput)?;
-    thread::sleep(time::Duration::from_millis(100));
-    client::analog_report(&mut sp, 14, true)?;
+    conn.set_pin_mode(power_en, PinMode::DigitalOutput)?;
+    conn.digital_port_write(port, port_mode)?;
+    conn.set_pin_mode(br_sens_b, PinMode::AnalogInput)?;
+    conn.analog_report(14, true)?;
     thread::sleep(time::Duration::from_millis(100));
 
     for _ in 0..100 {
-        update_board(&mut sp, &mut board);
-        let ref pins = board.pins;
+        let mut ctr = 0;
+        while let Ok(_) = conn.update() {
+            ctr += 1;
+            if ctr > 5 {
+                break;
+            }
+        }
+        let ref pins = conn.board().unwrap().pins;
         println!("Analog value: {:?}", pins);
     }
 
-    client::digital_port_write(&mut sp, port, 0).chain_err(|| "Unable to disable system power")?;
+    conn.digital_port_write(port, 0)?;
     Ok(())
 }
 

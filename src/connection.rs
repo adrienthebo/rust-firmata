@@ -129,6 +129,17 @@ where
             Connection::Closed => Err(ErrorKind::ConnectionClosed.into())
         }
     }
+
+    pub fn update(&mut self) -> Result<()> {
+        match *self {
+            Connection::Open { ref mut inner, ref mut board } => {
+                ::client::read(inner).and_then(|msg| {
+                    board.update(msg); Ok(())
+                })
+            },
+            Connection::Closed => Err(ErrorKind::ConnectionClosed.into())
+        }
+    }
 }
 
 impl Connection<serial_unix::TTYPort>
