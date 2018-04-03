@@ -146,9 +146,6 @@ pub fn resync<T>(conn: &mut T) -> io::Result<()>
 where
     T: ::connection::RW,
 {
-    debug!("Issuing Firmata reset");
-    reset(conn)?;
-
     let max_retries = 5;
     for attempt in 0..max_retries {
         debug!(
@@ -156,12 +153,18 @@ where
             attempt + 1,
             max_retries
         );
+        debug!("Issuing Firmata reset");
+        reset(conn)?;
+
         query_firmware(conn)?;
 
         for _ in 0.. 30 {
             match read(conn) {
                 Ok(FirmataMsg::ProtocolVersion { .. }) |
-                Ok(FirmataMsg::QueryFirmware { .. }) => return Ok(()),
+                Ok(FirmataMsg::QueryFirmware { .. }) => {
+                    debug!("Firmata connection resynchronized.");
+                    return Ok(())
+                }
                 Ok(m) => {
                     trace!("Discarding message {:?}", m);
                 }
