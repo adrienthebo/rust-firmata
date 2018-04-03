@@ -24,7 +24,7 @@ where
     let mut retries = 0;
     let mut buf: Vec<u8> = Vec::new();
     loop {
-        match read_with_buf(conn, 3, &mut buf) {
+        match read_byte(conn, &mut buf) {
             Err(Error(ErrorKind::PartialMsg, _)) => {
                 debug!("Continuing to read from Firmata stream");
             },
@@ -34,20 +34,22 @@ where
                         retries += 1;
                         debug!("Firmata read timed out, retrying ({} of {})", retries, max_retries);
                     },
-                    _ => break Err(err.into())
+                    _ => {
+                        error!("Unable to read Firmata message: {:?}", kind);
+                        break Err(err.into())
+                    }
                 }
             },
             Err(Error(kind, _)) => {
-                warn!("kind: {:?}", kind);
+                error!("Unable to read Firmata message: {:?}", kind);
                 break Err(kind.into())
             },
-            Err(e) => { break Err(e) },
             msg => break msg
         }
     }
 }
 
-pub fn read_with_buf<T>(conn: &mut T, max_retries: usize, buf: &mut Vec<u8>) -> Result<FirmataMsg>
+pub fn read_byte<T>(conn: &mut T, buf: &mut Vec<u8>) -> Result<FirmataMsg>
 where
     T: ::connection::RW,
 {
