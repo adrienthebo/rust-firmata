@@ -6,7 +6,7 @@
 use errors::*;
 use parser;
 use protocol::*;
-use std::{io,thread, time};
+use std::io;
 
 use nom;
 
